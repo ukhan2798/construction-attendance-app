@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b57d0" />
+  <title>DMT Sea Palace - Site Attendance v6</title>
+  <style>
+    :root{
+      --bg:#eef3f8;
+      --card:#fff;
+      --primary:#0b57d0;
+      --primary2:#0842a0;
+      --text:#172033;
+      --muted:#667085;
+      --line:#d9e2ec;
+      --ok:#137333;
+      --warn:#b06000;
+      --danger:#b3261e;
+      --soft:#f7f9fc;
+      --shadow:0 10px 30px rgba(20,35,60,.10);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+    .app{min-height:100vh}
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      background:linear-gradient(135deg,var(--primary),var(--primary2));
+      color:white;padding:14px 16px;
+      box-shadow:0 3px 15px rgba(0,0,0,.18)
+    }
+    .toprow{display:flex;justify-content:space-between;gap:12px;align-items:center}
+    .brand-title{font-size:18px;font-weight:800;letter-spacing:.2px}
+    .brand-sub{font-size:12px;opacity:.88;margin-top:3px}
+    .status-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      background:rgba(255,255,255,.15);
+      padding:7px 10px;border-radius:999px;font-size:12px;font-weight:700
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:#9aa0a6}
+    .dot.online{background:#5ee15e}
+    .dot.offline{background:#ffb4ab}
+    .container{max-width:1000px;margin:0 auto;padding:16px 16px 95px}
+    .card{
+      background:var(--card);border:1px solid var(--line);
+      border-radius:var(--radius);box-shadow:var(--shadow);
+      padding:16px;margin-bottom:14px
+    }
+    .login-wrap{max-width:430px;margin:8vh auto 0}
+    .login-logo{
+      width:66px;height:66px;border-radius:18px;
+      display:grid;place-items:center;margin:0 auto 14px;
+      background:var(--primary);color:white;font-size:28px;font-weight:900
+    }
+    h1,h2,h3,p{margin-top:0}
+    h2{font-size:19px}
+    .field{margin-bottom:13px}
+    label{display:block;font-size:12px;font-weight:800;color:#475467;margin-bottom:6px}
+    input,select,textarea{
+      width:100%;border:1px solid #cbd5e1;border-radius:11px;
+      padding:12px;background:white;color:var(--text);outline:none
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--primary);box-shadow:0 0 0 3px rgba(11,87,208,.12)
+    }
+    .btn{
+      border:0;border-radius:11px;padding:12px 15px;font-weight:800;
+      min-height:44px
+    }
+    .btn-primary{background:var(--primary);color:white}
+    .btn-primary:hover{background:var(--primary2)}
+    .btn-outline{background:white;color:var(--primary);border:1px solid var(--primary)}
+    .btn-soft{background:#edf3ff;color:#174ea6}
+    .btn-danger{background:#fde8e7;color:var(--danger)}
+    .btn-ok{background:#e6f4ea;color:var(--ok)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .full{width:100%}
+    .row{display:flex;gap:10px;align-items:center}
+    .row.wrap{flex-wrap:wrap}
+    .grow{flex:1}
+    .small{font-size:12px}
+    .muted{color:var(--muted)}
+    .section-title{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      margin-bottom:12px
+    }
+    .summary-grid{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px
+    }
+    .summary-box{
+      background:var(--soft);border:1px solid var(--line);border-radius:12px;
+      text-align:center;padding:10px 6px
+    }
+    .summary-box b{display:block;font-size:19px}
+    .summary-box span{font-size:11px;color:var(--muted);font-weight:700}
+    .worker{
+      border:1px solid var(--line);border-radius:14px;background:white;
+      padding:13px;margin-bottom:10px
+    }
+    .worker.locked{background:#fafafa}
+    .worker-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .worker-name{font-weight:900}
+    .worker-meta{font-size:12px;color:var(--muted);margin-top:3px}
+    .status-badge{
+      font-size:11px;font-weight:900;border-radius:999px;
+      padding:6px 9px;height:max-content
+    }
+    .status-P{background:#e6f4ea;color:#137333}
+    .status-A{background:#fce8e6;color:#b3261e}
+    .status-OFF{background:#fff4ce;color:#7a4c00}
+    .status-AL{background:#e8f0fe;color:#174ea6}
+    .status-SL{background:#f3e8fd;color:#7b1fa2}
+    .status-PH{background:#e0f2f1;color:#00695c}
+    .status-BD{background:#f1f3f4;color:#3c4043}
+    .worker-grid{
+      display:grid;grid-template-columns:1.2fr .9fr .8fr .8fr;gap:8px;align-items:end
+    }
+    .hours-box{
+      min-height:44px;border:1px solid var(--line);border-radius:10px;
+      display:grid;place-items:center;background:#f8fafc;font-weight:900
+    }
+    .ot-stepper{display:grid;grid-template-columns:38px 1fr 38px;gap:5px}
+    .ot-stepper button{
+      border:1px solid var(--line);background:#f8fafc;border-radius:9px;font-weight:900
+    }
+    .ot-stepper input{text-align:center;padding:10px 4px}
+    .locked-note{font-size:11px;color:var(--muted);margin-top:8px}
+    .actions{
+      position:sticky;bottom:78px;z-index:10;
+      background:rgba(238,243,248,.94);backdrop-filter:blur(8px);
+      padding:8px 0
+    }
+    .nav{
+      position:fixed;bottom:0;left:0;right:0;z-index:30;
+      background:white;border-top:1px solid var(--line);
+      display:grid;grid-template-columns:repeat(4,1fr);
+      padding:7px 8px calc(7px + env(safe-area-inset-bottom))
+    }
+    .nav button{
+      border:0;background:white;color:#667085;padding:7px 4px;
+      font-size:11px;font-weight:800;border-radius:10px
+    }
+    .nav button.active{background:#e8f0fe;color:var(--primary)}
+    .nav-icon{display:block;font-size:19px;margin-bottom:3px}
+    .notice{
+      border-radius:12px;padding:11px 12px;margin-bottom:12px;font-size:13px;font-weight:700
+    }
+    .notice.ok{background:#e6f4ea;color:#137333}
+    .notice.warn{background:#fff4ce;color:#7a4c00}
+    .notice.err{background:#fce8e6;color:#b3261e}
+    .history-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+    table{width:100%;border-collapse:collapse;min-width:760px}
+    th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}
+    th{background:#f5f7fb;position:sticky;top:0;z-index:1}
+    .month-controls{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:12px}
+    .transfer-item,.request-item{
+      border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:9px
+    }
+    .modal{
+      position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.52);
+      display:flex;align-items:flex-end;justify-content:center;padding:0
+    }
+    .modal-box{
+      width:100%;max-width:600px;background:white;
+      border-radius:20px 20px 0 0;padding:18px;max-height:88vh;overflow:auto
+    }
+    .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .icon-btn{border:0;background:#f1f3f4;border-radius:50%;width:36px;height:36px}
+    .loader{
+      width:22px;height:22px;border:3px solid #dbe5f5;border-top-color:var(--primary);
+      border-radius:50%;animation:spin .8s linear infinite;margin:auto
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty{text-align:center;padding:28px 14px;color:var(--muted)}
+    .queue-chip{font-size:11px;background:#fff4ce;color:#7a4c00;padding:5px 8px;border-radius:999px;font-weight:800}
+    @media (max-width:720px){
+      .summary-grid{grid-template-columns:repeat(2,1fr)}
+      .worker-grid{grid-template-columns:1fr 1fr}
+      .month-controls{grid-template-columns:1fr 1fr}
+      .month-controls .btn{grid-column:1/-1}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar hidden" id="appHeader">
+    <div class="toprow">
+      <div>
+        <div class="brand-title">DMT Sea Palace - Site Attendance</div>
+        <div class="brand-sub" id="headerSupervisor">Construction Attendance System</div>
+      </div>
+      <div class="status-pill">
+        <span class="dot" id="onlineDot"></span>
+        <span id="onlineText">Checking</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- LOGIN -->
+    <section id="loginView" class="login-wrap">
+      <div class="card">
+        <div class="login-logo">A</div>
+        <h2 style="text-align:center;margin-bottom:5px">Supervisor Login</h2>
+        <p class="muted small" style="text-align:center;margin-bottom:20px">
+          Site manpower attendance and overtime
+        </p>
+
+        <div id="loginNotice"></div>
+
+        <div class="field">
+          <label>Supervisor</label>
+          <select id="loginSupervisor">
+            <option value="">Loading supervisors...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>PIN</label>
+          <input id="loginPin" type="password" inputmode="numeric" maxlength="10" placeholder="Enter PIN" />
+        </div>
+
+        <button class="btn btn-primary full" id="loginBtn" onclick="login()">Login</button>
+
+        <div class="row wrap" style="justify-content:center;margin-top:12px">
+          <button class="btn btn-soft small" onclick="openApiSettings()">API Settings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- APP -->
+    <section id="mainApp" class="hidden">
+
+      <div id="globalNotice"></div>
+
+      <!-- TODAY -->
+      <section id="viewToday">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">Today's Attendance</h2>
+              <div class="small muted" id="todayLabel"></div>
+            </div>
+            <button class="btn btn-soft" onclick="refreshToday()">↻ Refresh</button>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-box"><b id="sumWorkers">0</b><span>WORKERS</span></div>
+            <div class="summary-box"><b id="sumPresent">0</b><span>PRESENT</span></div>
+            <div class="summary-box"><b id="sumAbsent">0</b><span>ABSENT</span></div>
+            <div class="summary-box"><b id="sumOT">0</b><span>OT HOURS</span></div>
+          </div>
+
+          <div class="row wrap" style="justify-content:space-between;margin-bottom:10px">
+            <span class="small muted">Normal hours: P = 8 hours. OT entered manually.</span>
+            <span id="queueChip" class="queue-chip hidden"></span>
+          </div>
+
+          <div id="workerList"></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary full" id="submitBtn" onclick="submitAttendance()">
+            Submit Today's Attendance
+          </button>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section id="viewHistory" class="hidden">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">Monthly Attendance</h2>
+              <div class="small muted">History from Google Sheets</div>
+            </div>
+          </div>
+
+          <div class="month-controls">
+            <select id="historyMonth"></select>
+            <select id="historyYear"></select>
+            <button class="btn btn-primary" onclick="loadMonthlyHistory()">Load Month</button>
+          </div>
+
+          <div id="historySummary" class="summary-grid"></div>
+          <div id="historyContent"></div>
+        </div>
+      </section>
+
+      <!-- TRANSFERS -->
+      <section id="viewTransfers" class="hidden">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">Worker Transfers</h2>
+              <div class="small muted">Send or accept workers between supervisors</div>
+            </div>
+            <button class="btn btn-soft" onclick="loadTransfers()">↻ Refresh</button>
+          </div>
+
+          <h3 style="font-size:15px">Request Transfer</h3>
+          <div class="field">
+            <label>Worker</label>
+            <select id="transferWorker"></select>
+          </div>
+          <div class="field">
+            <label>Transfer To Supervisor</label>
+            <select id="transferTo"></select>
+          </div>
+          <button class="btn btn-primary full" onclick="requestTransfer()">Send Transfer Request</button>
+
+          <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+
+          <h3 style="font-size:15px">Incoming Requests</h3>
+          <div id="transferIncoming"></div>
+        </div>
+      </section>
+
+      <!-- ACCOUNT -->
+      <section id="viewAccount" class="hidden">
+        <div class="card">
+          <h2>Account</h2>
+          <div class="field">
+            <label>Supervisor</label>
+            <div class="hours-box" id="accountSupervisor"></div>
+          </div>
+          <div class="field">
+            <label>Project</label>
+            <div class="hours-box" id="accountProject"></div>
+          </div>
+          <button class="btn btn-soft full" onclick="syncOfflineQueue()">Sync Offline Queue</button>
+          <button class="btn btn-outline full" style="margin-top:9px" onclick="openApiSettings()">API Settings</button>
+          <button class="btn btn-danger full" style="margin-top:9px" onclick="logout()">Logout</button>
+        </div>
+      </section>
+
+    </section>
+  </main>
+
+  <nav class="nav hidden" id="bottomNav">
+    <button class="active" data-view="Today" onclick="showView('Today',this)">
+      <span class="nav-icon">✓</span>Today
+    </button>
+    <button data-view="History" onclick="showView('History',this)">
+      <span class="nav-icon">▦</span>History
+    </button>
+    <button data-view="Transfers" onclick="showView('Transfers',this)">
+      <span class="nav-icon">⇄</span>Transfers
+    </button>
+    <button data-view="Account" onclick="showView('Account',this)">
+      <span class="nav-icon">☰</span>Account
+    </button>
+  </nav>
+
+</div>
+
+<!-- CORRECTION MODAL -->
+<div class="modal hidden" id="correctionModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 style="margin:0">Correction Request</h2>
+      <button class="icon-btn" onclick="closeCorrectionModal()">✕</button>
+    </div>
+
+    <div class="small muted" id="correctionWorkerText" style="margin-bottom:12px"></div>
+
+    <div class="field">
+      <label>Requested Status</label>
+      <select id="correctionStatus" onchange="updateCorrectionOtState()">
+        <option value="P">P - Present</option>
+        <option value="A">A - Absent</option>
+        <option value="OFF">OFF - Weekly Off</option>
+        <option value="AL">AL - Annual Leave</option>
+        <option value="SL">SL - Sick Leave</option>
+        <option value="PH">PH - Public Holiday</option>
+        <option value="BD">BD - Breakdown</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Requested OT Hours</label>
+      <input id="correctionOT" type="number" min="0" max="8" step="0.5" value="0" />
+    </div>
+
+    <div class="field">
+      <label>Reason</label>
+      <textarea id="correctionReason" rows="3" placeholder="Example: Worker was marked absent by mistake"></textarea>
+    </div>
+
+    <button class="btn btn-primary full" onclick="sendCorrectionRequest()">Submit Correction Request</button>
+    <div class="small muted" style="margin-top:10px;text-align:center">
+      After submission, Admin approves or rejects the request in Google Sheets.
+      Refresh the app to see the final corrected attendance.
+    </div>
+  </div>
+</div>
+
+<!-- API SETTINGS -->
+<div class="modal hidden" id="apiModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 style="margin:0">API Settings</h2>
+      <button class="icon-btn" onclick="closeApiSettings()">✕</button>
+    </div>
+    <p class="small muted">
+      Paste the Apps Script <b>Web app URL</b> ending with <b>/exec</b>. Do not use the Library URL.
+    </p>
+    <div class="field">
+      <label>Web App URL</label>
+      <input id="apiUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
+    </div>
+    <button class="btn btn-primary full" onclick="saveApiSettings()">Save API URL</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   API CONFIGURATION
+   A saved URL in this browser overrides the default below.
+========================================================= */
+
+// Current deployment shown in your Apps Script screenshot.
+// If it ever changes, use Account > API Settings to paste the new /exec URL.
+const DEFAULT_API_URL =
+  "https://script.google.com/macros/s/AKfycbzsG-fTz0j7dT0qtlScDF1cupZkWciDT6FLO2GeC8NmmfYfnPTQE8awVpceBCH8ip0Z/exec";
+
+let API_URL = localStorage.getItem("attendance_api_url") || DEFAULT_API_URL;
+
+const STATUS_INFO = {
+  P:   { label:"Present",        normal:8, ot:true  },
+  A:   { label:"Absent",         normal:0, ot:false },
+  OFF: { label:"Weekly Off",     normal:0, ot:true  },
+  AL:  { label:"Annual Leave",   normal:0, ot:false },
+  SL:  { label:"Sick Leave",     normal:0, ot:false },
+  PH:  { label:"Public Holiday", normal:0, ot:true  },
+  BD:  { label:"Breakdown",      normal:0, ot:true  }
+};
+
+let supervisors = [];
+let workers = [];
+let todayAttendance = [];
+let currentSupervisor = null;
+let correctionTarget = null;
+
+document.addEventListener("DOMContentLoaded", init);
+window.addEventListener("online", () => {
+  updateOnlineStatus();
+  syncOfflineQueue();
+});
+window.addEventListener("offline", updateOnlineStatus);
+
+async function init(){
+  updateOnlineStatus();
+  setTodayLabel();
+  setupMonthYearSelectors();
+  updateQueueChip();
+
+  const saved = sessionStorage.getItem("attendance_supervisor");
+  if(saved){
+    try{
+      currentSupervisor = JSON.parse(saved);
+      showMainApp();
+      await loadSupervisors();
+      await loadCrewAndToday();
+      return;
+    }catch(e){
+      sessionStorage.removeItem("attendance_supervisor");
+    }
+  }
+
+  await loadSupervisors();
+}
+
+function getTodayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+
+function setTodayLabel(){
+  const d = new Date();
+  document.getElementById("todayLabel").textContent =
+    d.toLocaleDateString(undefined,{
+      weekday:"long", year:"numeric", month:"long", day:"numeric"
+    });
+}
+
+function updateOnlineStatus(){
+  const online = navigator.onLine;
+  document.getElementById("onlineDot").className = "dot " + (online ? "online" : "offline");
+  document.getElementById("onlineText").textContent = online ? "Online" : "Offline";
+}
+
+async function apiPost(payload, options={}){
+  if(!API_URL || !API_URL.includes("/exec")){
+    throw new Error("Web App API URL is not configured.");
+  }
+
+  try{
+    const res = await fetch(API_URL,{
+      method:"POST",
+      redirect:"follow",
+      headers:{
+        "Content-Type":"text/plain;charset=utf-8"
+      },
+      body:JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+    let data;
+    try{
+      data = JSON.parse(text);
+    }catch{
+      throw new Error("API returned an invalid response. Check your /exec URL and deployment access.");
+    }
+
+    if(!data.success){
+      throw new Error(data.message || "Request failed.");
+    }
+
+    return data;
+  }catch(err){
+    if(options.queueIfOffline && (!navigator.onLine || /fetch|network/i.test(err.message))){
+      queueOffline(payload);
+      return {success:true, queued:true, message:"Saved offline and queued for sync."};
+    }
+    throw err;
+  }
+}
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+async function loadSupervisors(){
+  const select = document.getElementById("loginSupervisor");
+  try{
+    const data = await apiPost({action:"getSupervisors"});
+    supervisors = data.supervisors || [];
+
+    select.innerHTML = `<option value="">Select Supervisor</option>` +
+      supervisors.map(s =>
+        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
+      ).join("");
+
+    populateTransferSupervisors();
+  }catch(err){
+    select.innerHTML = `<option value="">Unable to load supervisors</option>`;
+    showNotice("loginNotice", err.message, "err");
+  }
+}
+
+async function login(){
+  const supervisorId = document.getElementById("loginSupervisor").value;
+  const pin = document.getElementById("loginPin").value.trim();
+  const btn = document.getElementById("loginBtn");
+
+  if(!supervisorId || !pin){
+    return showNotice("loginNotice","Select supervisor and enter PIN.","warn");
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Signing in...";
+
+  try{
+    const data = await apiPost({
+      action:"login",
+      supervisorId,
+      pin
+    });
+
+    currentSupervisor = data.supervisor;
+    sessionStorage.setItem("attendance_supervisor",JSON.stringify(currentSupervisor));
+    showMainApp();
+    await loadCrewAndToday();
+  }catch(err){
+    showNotice("loginNotice",err.message,"err");
+  }finally{
+    btn.disabled = false;
+    btn.textContent = "Login";
+  }
+}
+
+function showMainApp(){
+  document.getElementById("loginView").classList.add("hidden");
+  document.getElementById("mainApp").classList.remove("hidden");
+  document.getElementById("appHeader").classList.remove("hidden");
+  document.getElementById("bottomNav").classList.remove("hidden");
+
+  document.getElementById("headerSupervisor").textContent =
+    `${currentSupervisor.supervisorName || currentSupervisor.supervisorId} • ${currentSupervisor.supervisorId}`;
+
+  document.getElementById("accountSupervisor").textContent =
+    `${currentSupervisor.supervisorName || ""} (${currentSupervisor.supervisorId})`;
+
+  document.getElementById("accountProject").textContent =
+    currentSupervisor.project || "—";
+}
+
+function logout(){
+  sessionStorage.removeItem("attendance_supervisor");
+  currentSupervisor = null;
+  workers = [];
+  todayAttendance = [];
+  document.getElementById("mainApp").classList.add("hidden");
+  document.getElementById("appHeader").classList.add("hidden");
+  document.getElementById("bottomNav").classList.add("hidden");
+  document.getElementById("loginView").classList.remove("hidden");
+  document.getElementById("loginPin").value = "";
+}
+
+/* =========================================================
+   TODAY ATTENDANCE
+========================================================= */
+
+async function loadCrewAndToday(){
+  setWorkerLoading();
+
+  try{
+    const [crewData, attendanceData] = await Promise.all([
+      apiPost({
+        action:"getWorkers",
+        supervisorId:currentSupervisor.supervisorId
+      }),
+      apiPost({
+        action:"getTodayAttendance",
+        supervisorId:currentSupervisor.supervisorId,
+        date:getTodayISO()
+      })
+    ]);
+
+    workers = crewData.workers || [];
+    todayAttendance = attendanceData.records || [];
+
+    mergeTodayState();
+    renderWorkers();
+    populateTransferWorkers();
+    populateTransferSupervisors();
+  }catch(err){
+    document.getElementById("workerList").innerHTML =
+      `<div class="notice err">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function refreshToday(){
+  await syncOfflineQueue();
+  await loadCrewAndToday();
+  showGlobal("Attendance refreshed from Google Sheets.","ok");
+}
+
+function mergeTodayState(){
+  const submittedMap = new Map(
+    todayAttendance.map(r => [String(r.workerId),r])
+  );
+
+  workers = workers.map(w => {
+    const submitted = submittedMap.get(String(w.workerId));
+
+    if(submitted){
+      return {
+        ...w,
+        workStatus:submitted.workStatus || "P",
+        normalHours:Number(submitted.normalHours || 0),
+        otHours:Number(submitted.otHours || 0),
+        totalHours:Number(submitted.totalHours || 0),
+        submitted:true,
+        correctionStatus:submitted.correctionStatus || "None",
+        submissionId:submitted.submissionId || ""
+      };
+    }
+
+    return {
+      ...w,
+      workStatus:w.workStatus || "P",
+      normalHours:8,
+      otHours:Number(w.otHours || 0),
+      totalHours:8 + Number(w.otHours || 0),
+      submitted:false,
+      correctionStatus:"None"
+    };
+  });
+}
+
+function setWorkerLoading(){
+  document.getElementById("workerList").innerHTML =
+    `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading workers...</div></div>`;
+}
+
+function renderWorkers(){
+  const list = document.getElementById("workerList");
+
+  if(!workers.length){
+    list.innerHTML = `<div class="empty">No active workers assigned to this supervisor.</div>`;
+    updateSummary();
+    return;
+  }
+
+  list.innerHTML = workers.map((w,index) => workerCardHtml(w,index)).join("");
+  updateSummary();
+  updateSubmitButton();
+}
+
+function workerCardHtml(w,index){
+  const locked = !!w.submitted;
+  const status = STATUS_INFO[w.workStatus] || STATUS_INFO.P;
+  const correctionText =
+    w.correctionStatus && w.correctionStatus !== "None"
+      ? ` • Correction: ${escapeHtml(w.correctionStatus)}`
+      : "";
+
+  return `
+    <div class="worker ${locked ? "locked" : ""}">
+      <div class="worker-head">
+        <div>
+          <div class="worker-name">${index+1}. ${escapeHtml(w.workerName)}</div>
+          <div class="worker-meta">
+            ${escapeHtml(w.workerId)} • ${escapeHtml(w.designation || "")}
+            ${w.location ? " • " + escapeHtml(w.location) : ""}
+          </div>
+        </div>
+        <span class="status-badge status-${escapeHtml(w.workStatus)}">${escapeHtml(w.workStatus)}</span>
+      </div>
+
+      <div class="worker-grid">
+        <div>
+          <label>Work Status</label>
+          <select ${locked ? "disabled" : ""} onchange="changeStatus(${index},this.value)">
+            ${Object.entries(STATUS_INFO).map(([code,info]) =>
+              `<option value="${code}" ${w.workStatus===code ? "selected" : ""}>${code} - ${info.label}</option>`
+            ).join("")}
+          </select>
+        </div>
+
+        <div>
+          <label>OT Hours</label>
+          <div class="ot-stepper">
+            <button ${locked || !status.ot ? "disabled" : ""} onclick="stepOT(${index},-0.5)">−</button>
+            <input
+              type="number"
+              min="0" max="8" step="0.5"
+              value="${Number(w.otHours || 0)}"
+              ${locked || !status.ot ? "disabled" : ""}
+              onchange="setOT(${index},this.value)"
+            />
+            <button ${locked || !status.ot ? "disabled" : ""} onclick="stepOT(${index},0.5)">+</button>
+          </div>
+        </div>
+
+        <div>
+          <label>Normal</label>
+          <div class="hours-box">${Number(w.normalHours || 0)}</div>
+        </div>
+
+        <div>
+          <label>Total</label>
+          <div class="hours-box">${Number(w.totalHours || 0)}</div>
+        </div>
+      </div>
+
+      ${locked ? `
+        <div class="row wrap" style="justify-content:space-between;margin-top:10px">
+          <div class="locked-note">🔒 Submitted${correctionText}</div>
+          ${
+            String(w.correctionStatus || "").toLowerCase() === "pending"
+              ? `<button class="btn btn-soft small" disabled>⏳ Correction Pending</button>`
+              : `<button class="btn btn-soft small" onclick="openCorrectionModal(${index})">
+                   Request Correction
+                 </button>`
+          }
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function changeStatus(index,status){
+  const w = workers[index];
+  if(w.submitted) return;
+
+  const info = STATUS_INFO[status];
+  w.workStatus = status;
+  w.normalHours = info.normal;
+
+  if(!info.ot){
+    w.otHours = 0;
+  }
+
+  w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
+  renderWorkers();
+}
+
+function setOT(index,value){
+  const w = workers[index];
+  if(w.submitted) return;
+
+  const info = STATUS_INFO[w.workStatus];
+  if(!info.ot){
+    w.otHours = 0;
+  }else{
+    let v = Number(value);
+    if(!Number.isFinite(v)) v = 0;
+    v = Math.max(0,Math.min(8,v));
+    v = Math.round(v*2)/2;
+    w.otHours = v;
+  }
+
+  w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
+  renderWorkers();
+}
+
+function stepOT(index,delta){
+  setOT(index,Number(workers[index].otHours || 0)+delta);
+}
+
+function updateSummary(){
+  document.getElementById("sumWorkers").textContent = workers.length;
+  document.getElementById("sumPresent").textContent =
+    workers.filter(w => w.workStatus === "P").length;
+  document.getElementById("sumAbsent").textContent =
+    workers.filter(w => w.workStatus === "A").length;
+  document.getElementById("sumOT").textContent =
+    formatNumber(workers.reduce((sum,w)=>sum+Number(w.otHours || 0),0));
+}
+
+function updateSubmitButton(){
+  const btn = document.getElementById("submitBtn");
+  const pending = workers.filter(w => !w.submitted);
+
+  if(!workers.length){
+    btn.disabled = true;
+    btn.textContent = "No Workers to Submit";
+  }else if(!pending.length){
+    btn.disabled = true;
+    btn.textContent = "Today's Attendance Already Submitted";
+  }else{
+    btn.disabled = false;
+    btn.textContent = `Submit Attendance (${pending.length})`;
+  }
+}
+
+async function submitAttendance(){
+  const pending = workers.filter(w => !w.submitted);
+
+  if(!pending.length){
+    return showGlobal("All current workers are already submitted for today.","warn");
+  }
+
+  if(!confirm(`Submit today's attendance for ${pending.length} worker(s)? After submission, corrections must be requested.`)){
+    return;
+  }
+
+  const btn = document.getElementById("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+
+  const records = pending.map(w => ({
+    date:getTodayISO(),
+    workerId:w.workerId,
+    workerName:w.workerName,
+    designation:w.designation || "",
+    supervisorId:currentSupervisor.supervisorId,
+    workStatus:w.workStatus,
+    otHours:Number(w.otHours || 0),
+    location:w.location || ""
+  }));
+
+  try{
+    const data = await apiPost({
+      action:"submitAttendance",
+      supervisorId:currentSupervisor.supervisorId,
+      records
+    },{queueIfOffline:true});
+
+    if(data.queued){
+      showGlobal("You are offline. Attendance is safely queued and will sync when internet returns.","warn");
+      records.forEach(r => {
+        const w = workers.find(x => String(x.workerId) === String(r.workerId));
+        if(w) w.submitted = true;
+      });
+      renderWorkers();
+    }else{
+      showGlobal("Attendance submitted successfully.","ok");
+      await loadCrewAndToday();
+    }
+  }catch(err){
+    showGlobal(err.message,"err");
+    updateSubmitButton();
+  }
+}
+
+/* =========================================================
+   CORRECTION REQUEST
+========================================================= */
+
+function openCorrectionModal(index){
+  const w = workers[index];
+  if(!w || !w.submitted) return;
+
+  correctionTarget = w;
+  document.getElementById("correctionWorkerText").textContent =
+    `${w.workerName} (${w.workerId}) • Current: ${w.workStatus} • OT: ${w.otHours}`;
+
+  document.getElementById("correctionStatus").value = w.workStatus;
+  document.getElementById("correctionOT").value = Number(w.otHours || 0);
+  document.getElementById("correctionReason").value = "";
+  updateCorrectionOtState();
+
+  document.getElementById("correctionModal").classList.remove("hidden");
+}
+
+function closeCorrectionModal(){
+  document.getElementById("correctionModal").classList.add("hidden");
+  correctionTarget = null;
+}
+
+function updateCorrectionOtState(){
+  const status = document.getElementById("correctionStatus").value;
+  const input = document.getElementById("correctionOT");
+  const allowed = STATUS_INFO[status].ot;
+  input.disabled = !allowed;
+  if(!allowed) input.value = 0;
+}
+
+async function sendCorrectionRequest(){
+  if(!correctionTarget) return;
+
+  const requestedStatus = document.getElementById("correctionStatus").value;
+  const requestedOT = Number(document.getElementById("correctionOT").value || 0);
+  const reason = document.getElementById("correctionReason").value.trim();
+
+  if(!reason){
+    return alert("Please enter the reason for correction.");
+  }
+
+  try{
+    const data = await apiPost({
+      action:"requestCorrection",
+      supervisorId:currentSupervisor.supervisorId,
+      date:getTodayISO(),
+      workerId:correctionTarget.workerId,
+      requestedStatus,
+      requestedOT,
+      reason
+    },{queueIfOffline:true});
+
+    closeCorrectionModal();
+
+    if(data.queued){
+      showGlobal("Correction request saved offline and queued for sync.","warn");
+    }else{
+      showGlobal("Correction request submitted to admin.","ok");
+      await loadCrewAndToday();
+    }
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+/* =========================================================
+   MONTHLY HISTORY
+========================================================= */
+
+function setupMonthYearSelectors(){
+  const monthSelect = document.getElementById("historyMonth");
+  const yearSelect = document.getElementById("historyYear");
+  const now = new Date();
+
+  const months = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  monthSelect.innerHTML = months.map((m,i) =>
+    `<option value="${i+1}" ${i===now.getMonth() ? "selected" : ""}>${m}</option>`
+  ).join("");
+
+  const years = [];
+  for(let y=now.getFullYear()-2;y<=now.getFullYear()+1;y++) years.push(y);
+  yearSelect.innerHTML = years.map(y =>
+    `<option value="${y}" ${y===now.getFullYear() ? "selected" : ""}>${y}</option>`
+  ).join("");
+}
+
+async function loadMonthlyHistory(){
+  const month = Number(document.getElementById("historyMonth").value);
+  const year = Number(document.getElementById("historyYear").value);
+
+  document.getElementById("historyContent").innerHTML =
+    `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading history...</div></div>`;
+
+  try{
+    const data = await apiPost({
+      action:"getMonthlyAttendance",
+      supervisorId:currentSupervisor.supervisorId,
+      month,
+      year
+    });
+
+    renderHistory(data);
+  }catch(err){
+    document.getElementById("historyContent").innerHTML =
+      `<div class="notice err">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function renderHistory(data){
+  const records = data.records || [];
+  const s = data.summary || {};
+
+  document.getElementById("historySummary").innerHTML = `
+    <div class="summary-box"><b>${Number(s.workerCount || 0)}</b><span>WORKERS</span></div>
+    <div class="summary-box"><b>${Number(s.presentEntries || 0)}</b><span>P ENTRIES</span></div>
+    <div class="summary-box"><b>${formatNumber(s.normalHours || 0)}</b><span>NORMAL HRS</span></div>
+    <div class="summary-box"><b>${formatNumber(s.otHours || 0)}</b><span>OT HOURS</span></div>
+  `;
+
+  if(!records.length){
+    document.getElementById("historyContent").innerHTML =
+      `<div class="empty">No attendance records for this month.</div>`;
+    return;
+  }
+
+  document.getElementById("historyContent").innerHTML = `
+    <div class="history-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Worker</th>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Normal</th>
+            <th>OT</th>
+            <th>Total</th>
+            <th>Location</th>
+            <th>Correction</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${records.map(r => `
+            <tr>
+              <td>${escapeHtml(r.date)}</td>
+              <td>${escapeHtml(r.workerName)}</td>
+              <td>${escapeHtml(r.workerId)}</td>
+              <td><span class="status-badge status-${escapeHtml(r.workStatus)}">${escapeHtml(r.workStatus)}</span></td>
+              <td>${formatNumber(r.normalHours)}</td>
+              <td>${formatNumber(r.otHours)}</td>
+              <td>${formatNumber(r.totalHours)}</td>
+              <td>${escapeHtml(r.location || "")}</td>
+              <td>${escapeHtml(r.correctionStatus || "None")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* =========================================================
+   TRANSFERS
+========================================================= */
+
+function populateTransferWorkers(){
+  const select = document.getElementById("transferWorker");
+  select.innerHTML = `<option value="">Select Worker</option>` +
+    workers.map(w =>
+      `<option value="${escapeHtml(w.workerId)}">${escapeHtml(w.workerName)} (${escapeHtml(w.workerId)})</option>`
+    ).join("");
+}
+
+function populateTransferSupervisors(){
+  const select = document.getElementById("transferTo");
+  const currentId = currentSupervisor ? currentSupervisor.supervisorId : "";
+
+  select.innerHTML = `<option value="">Select Supervisor</option>` +
+    supervisors
+      .filter(s => String(s.supervisorId) !== String(currentId))
+      .map(s =>
+        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
+      ).join("");
+}
+
+async function requestTransfer(){
+  const workerId = document.getElementById("transferWorker").value;
+  const toSupervisor = document.getElementById("transferTo").value;
+
+  if(!workerId || !toSupervisor){
+    return showGlobal("Select a worker and receiving supervisor.","warn");
+  }
+
+  const worker = workers.find(w => String(w.workerId) === String(workerId));
+  if(!worker) return;
+
+  if(!confirm(`Request transfer of ${worker.workerName} to ${toSupervisor}?`)) return;
+
+  try{
+    const data = await apiPost({
+      action:"requestTransfer",
+      workerId:worker.workerId,
+      workerName:worker.workerName,
+      fromSupervisor:currentSupervisor.supervisorId,
+      toSupervisor
+    },{queueIfOffline:true});
+
+    showGlobal(
+      data.queued ? "Transfer request queued for sync." : "Transfer request sent.",
+      data.queued ? "warn" : "ok"
+    );
+  }catch(err){
+    showGlobal(err.message,"err");
+  }
+}
+
+async function loadTransfers(){
+  const box = document.getElementById("transferIncoming");
+  box.innerHTML = `<div class="empty"><div class="loader"></div></div>`;
+
+  try{
+    const data = await apiPost({
+      action:"getTransfers",
+      supervisorId:currentSupervisor.supervisorId
+    });
+
+    const transfers = data.transfers || [];
+    if(!transfers.length){
+      box.innerHTML = `<div class="empty">No pending incoming transfer requests.</div>`;
+      return;
+    }
+
+    box.innerHTML = transfers.map(t => `
+      <div class="transfer-item">
+        <b>${escapeHtml(t.workerName || t.workerId)}</b>
+        <div class="small muted" style="margin-top:3px">
+          ${escapeHtml(t.workerId)} • From ${escapeHtml(t.fromSupervisor)}
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn btn-ok grow" onclick="handleTransfer('${jsEscape(t.transferId)}','approve')">Approve</button>
+          <button class="btn btn-danger grow" onclick="handleTransfer('${jsEscape(t.transferId)}','reject')">Reject</button>
+        </div>
+      </div>
+    `).join("");
+  }catch(err){
+    box.innerHTML = `<div class="notice err">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function handleTransfer(transferId,decision){
+  try{
+    await apiPost({
+      action:"handleTransfer",
+      transferId,
+      supervisorId:currentSupervisor.supervisorId,
+      decision
+    });
+
+    showGlobal(`Transfer ${decision === "approve" ? "approved" : "rejected"}.`,"ok");
+    await loadTransfers();
+    await loadCrewAndToday();
+  }catch(err){
+    showGlobal(err.message,"err");
+  }
+}
+
+/* =========================================================
+   OFFLINE QUEUE
+========================================================= */
+
+function getQueue(){
+  try{
+    return JSON.parse(localStorage.getItem("attendance_offline_queue") || "[]");
+  }catch{
+    return [];
+  }
+}
+
+function queueOffline(payload){
+  const q = getQueue();
+  q.push({
+    id:"Q-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),
+    createdAt:new Date().toISOString(),
+    payload
+  });
+  localStorage.setItem("attendance_offline_queue",JSON.stringify(q));
+  updateQueueChip();
+}
+
+async function syncOfflineQueue(){
+  if(!navigator.onLine) return;
+
+  let q = getQueue();
+  if(!q.length){
+    updateQueueChip();
+    return;
+  }
+
+  const remaining = [];
+
+  for(const item of q){
+    try{
+      await apiPost(item.payload);
+    }catch(err){
+      // Duplicate attendance after an earlier successful sync should not keep retrying forever.
+      if(/already submitted/i.test(err.message)){
+        continue;
+      }
+      remaining.push(item);
+    }
+  }
+
+  localStorage.setItem("attendance_offline_queue",JSON.stringify(remaining));
+  updateQueueChip();
+
+  if(q.length && !remaining.length && currentSupervisor){
+    showGlobal("Offline queue synced successfully.","ok");
+    await loadCrewAndToday();
+  }
+}
+
+function updateQueueChip(){
+  const chip = document.getElementById("queueChip");
+  const count = getQueue().length;
+  if(count){
+    chip.textContent = `${count} queued`;
+    chip.classList.remove("hidden");
+  }else{
+    chip.classList.add("hidden");
+  }
+}
+
+/* =========================================================
+   NAVIGATION / SETTINGS / UTILITIES
+========================================================= */
+
+function showView(name,btn){
+  ["Today","History","Transfers","Account"].forEach(v => {
+    document.getElementById("view"+v).classList.toggle("hidden",v !== name);
+  });
+
+  document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+
+  if(name === "History") loadMonthlyHistory();
+  if(name === "Transfers") loadTransfers();
+}
+
+function openApiSettings(){
+  document.getElementById("apiUrlInput").value = API_URL;
+  document.getElementById("apiModal").classList.remove("hidden");
+}
+
+function closeApiSettings(){
+  document.getElementById("apiModal").classList.add("hidden");
+}
+
+function saveApiSettings(){
+  let url = document.getElementById("apiUrlInput").value.trim();
+
+  if(!url.endsWith("/exec")){
+    return alert("Please paste the Web app URL ending with /exec.");
+  }
+
+  API_URL = url;
+  localStorage.setItem("attendance_api_url",url);
+  closeApiSettings();
+  alert("API URL saved. Reloading app...");
+  location.reload();
+}
+
+function showNotice(id,message,type="ok"){
+  document.getElementById(id).innerHTML =
+    `<div class="notice ${type}">${escapeHtml(message)}</div>`;
+}
+
+function showGlobal(message,type="ok"){
+  showNotice("globalNotice",message,type);
+  setTimeout(() => {
+    const el = document.getElementById("globalNotice");
+    if(el) el.innerHTML = "";
+  },5000);
+}
+
+function formatNumber(value){
+  const n = Number(value || 0);
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function jsEscape(value){
+  return String(value ?? "")
+    .replaceAll("\\","\\\\")
+    .replaceAll("'","\\'");
+}
+</script>
+</body>
+</html>
