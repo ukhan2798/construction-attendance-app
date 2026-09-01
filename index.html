@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b57d0" />
-  <title>DMT Sea Palace - Site Attendance v6</title>
+  <title>DMT Sea Palace - Site Attendance v7</title>
   <style>
     :root{
       --bg:#eef3f8;
@@ -682,12 +682,16 @@ function mergeTodayState(){
       };
     }
 
+    const isSunday = new Date(getTodayISO() + "T00:00:00").getDay() === 0;
+    const defaultStatus = isSunday ? "OFF" : "P";
+    const defaultNormalHours = isSunday ? 0 : 8;
+
     return {
       ...w,
-      workStatus:w.workStatus || "P",
-      normalHours:8,
-      otHours:Number(w.otHours || 0),
-      totalHours:8 + Number(w.otHours || 0),
+      workStatus:defaultStatus,
+      normalHours:defaultNormalHours,
+      otHours:0,
+      totalHours:defaultNormalHours,
       submitted:false,
       correctionStatus:"None"
     };
