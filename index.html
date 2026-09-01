@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b57d0" />
-  <title>DMT Sea Palace - Site Attendance v7</title>
+  <title>DMT Sea Palace - Site Attendance v8</title>
   <style>
     :root{
       --bg:#eef3f8;
@@ -94,7 +94,7 @@
       margin-bottom:12px
     }
     .summary-grid{
-      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px
+      display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px
     }
     .summary-box{
       background:var(--soft);border:1px solid var(--line);border-radius:12px;
@@ -142,7 +142,7 @@
     .nav{
       position:fixed;bottom:0;left:0;right:0;z-index:30;
       background:white;border-top:1px solid var(--line);
-      display:grid;grid-template-columns:repeat(4,1fr);
+      display:grid;grid-template-columns:repeat(5,1fr);
       padding:7px 8px calc(7px + env(safe-area-inset-bottom))
     }
     .nav button{
@@ -282,18 +282,31 @@
         <div class="card">
           <div class="section-title">
             <div>
-              <h2 style="margin-bottom:3px">Monthly Attendance</h2>
-              <div class="small muted">History from Google Sheets</div>
+              <h2 style="margin-bottom:3px">Attendance History</h2>
+              <div class="small muted">Choose any backdate or date range to view submitted attendance.</div>
             </div>
           </div>
 
-          <div class="month-controls">
-            <select id="historyMonth"></select>
-            <select id="historyYear"></select>
-            <button class="btn btn-primary" onclick="loadMonthlyHistory()">Load Month</button>
+          <div class="field">
+            <label>From Date</label>
+            <input id="historyFromDate" type="date">
           </div>
 
-          <div id="historySummary" class="summary-grid"></div>
+          <div class="field">
+            <label>To Date</label>
+            <input id="historyToDate" type="date">
+          </div>
+
+          <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-soft small" onclick="setHistoryPreset('today')">Today</button>
+            <button class="btn btn-soft small" onclick="setHistoryPreset('yesterday')">Yesterday</button>
+            <button class="btn btn-soft small" onclick="setHistoryPreset('week')">This Week</button>
+            <button class="btn btn-soft small" onclick="setHistoryPreset('month')">This Month</button>
+          </div>
+
+          <button class="btn btn-primary full" onclick="loadHistoryRange()">View Attendance</button>
+
+          <div id="historyRangeSummary" class="summary-grid" style="margin-top:14px"></div>
           <div id="historyContent"></div>
         </div>
       </section>
@@ -327,6 +340,27 @@
         </div>
       </section>
 
+      <!-- MY CURRENT STAFF -->
+      <section id="viewStaff" class="hidden">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">My Current Staff</h2>
+              <div class="small muted">Active workers currently assigned to this supervisor.</div>
+            </div>
+          </div>
+
+          <div id="staffSummary" class="summary-grid"></div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-soft" onclick="refreshStaffList()">Refresh</button>
+            <button class="btn btn-primary" onclick="printCurrentStaff()">View / Print / PDF</button>
+          </div>
+
+          <div id="staffContent"></div>
+        </div>
+      </section>
+
       <!-- ACCOUNT -->
       <section id="viewAccount" class="hidden">
         <div class="card">
@@ -354,6 +388,9 @@
     </button>
     <button data-view="History" onclick="showView('History',this)">
       <span class="nav-icon">▦</span>History
+    </button>
+    <button data-view="Staff" onclick="showView('Staff',this)">
+      <span class="nav-icon">👥</span>My Staff
     </button>
     <button data-view="Transfers" onclick="showView('Transfers',this)">
       <span class="nav-icon">⇄</span>Transfers
@@ -978,100 +1015,271 @@ async function sendCorrectionRequest(){
 ========================================================= */
 
 function setupMonthYearSelectors(){
-  const monthSelect = document.getElementById("historyMonth");
-  const yearSelect = document.getElementById("historyYear");
-  const now = new Date();
+  const today = getTodayISO();
+  const from = document.getElementById("historyFromDate");
+  const to = document.getElementById("historyToDate");
 
-  const months = [
-    "January","February","March","April","May","June",
-    "July","August","September","October","November","December"
-  ];
-
-  monthSelect.innerHTML = months.map((m,i) =>
-    `<option value="${i+1}" ${i===now.getMonth() ? "selected" : ""}>${m}</option>`
-  ).join("");
-
-  const years = [];
-  for(let y=now.getFullYear()-2;y<=now.getFullYear()+1;y++) years.push(y);
-  yearSelect.innerHTML = years.map(y =>
-    `<option value="${y}" ${y===now.getFullYear() ? "selected" : ""}>${y}</option>`
-  ).join("");
+  if(from && !from.value) from.value = today.slice(0,7) + "-01";
+  if(to && !to.value) to.value = today;
 }
 
-async function loadMonthlyHistory(){
-  const month = Number(document.getElementById("historyMonth").value);
-  const year = Number(document.getElementById("historyYear").value);
+function toISODateLocal(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,"0");
+  const d = String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+
+function setHistoryPreset(type){
+  const now = new Date();
+  let from = new Date(now);
+  let to = new Date(now);
+
+  if(type === "yesterday"){
+    from.setDate(from.getDate()-1);
+    to = new Date(from);
+  }else if(type === "week"){
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1-day;
+    from.setDate(now.getDate()+diff);
+  }else if(type === "month"){
+    from = new Date(now.getFullYear(),now.getMonth(),1);
+  }
+
+  document.getElementById("historyFromDate").value = toISODateLocal(from);
+  document.getElementById("historyToDate").value = toISODateLocal(to);
+  loadHistoryRange();
+}
+
+async function loadHistoryRange(){
+  if(!currentSupervisor) return;
+
+  const fromDate = document.getElementById("historyFromDate").value;
+  const toDate = document.getElementById("historyToDate").value;
+
+  if(!fromDate || !toDate){
+    return alert("Please select From Date and To Date.");
+  }
+
+  if(fromDate > toDate){
+    return alert("From Date cannot be after To Date.");
+  }
 
   document.getElementById("historyContent").innerHTML =
     `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading history...</div></div>`;
 
   try{
     const data = await apiPost({
-      action:"getMonthlyAttendance",
+      action:"getAttendanceRange",
       supervisorId:currentSupervisor.supervisorId,
-      month,
-      year
+      fromDate,
+      toDate
     });
 
-    renderHistory(data);
+    const records = data.records || [];
+    const totalOT = records.reduce((sum,r) => sum + Number(r.otHours || 0),0);
+    const present = records.filter(r => r.workStatus === "P").length;
+    const absent = records.filter(r => r.workStatus === "A").length;
+
+    document.getElementById("historyRangeSummary").innerHTML = `
+      <div class="summary-box"><b>${records.length}</b><span>Records</span></div>
+      <div class="summary-box"><b>${present}</b><span>Present</span></div>
+      <div class="summary-box"><b>${absent}</b><span>Absent</span></div>
+      <div class="summary-box"><b>${totalOT}</b><span>OT Hours</span></div>
+    `;
+
+    if(!records.length){
+      document.getElementById("historyContent").innerHTML =
+        `<div class="empty">No attendance found for the selected dates.</div>`;
+      return;
+    }
+
+    const grouped = {};
+    records.forEach(r => {
+      if(!grouped[r.date]) grouped[r.date] = [];
+      grouped[r.date].push(r);
+    });
+
+    document.getElementById("historyContent").innerHTML =
+      Object.keys(grouped).sort().reverse().map(date => `
+        <div style="margin-top:15px">
+          <div style="font-weight:900;margin-bottom:8px">${escapeHtml(date)}</div>
+          ${grouped[date].map(r => `
+            <div class="worker-card">
+              <div class="worker-top">
+                <div>
+                  <div class="worker-name">${escapeHtml(r.workerName || "")}</div>
+                  <div class="small muted">${escapeHtml(r.workerId || "")} • ${escapeHtml(r.designation || "")}</div>
+                </div>
+                <div class="status-pill">${escapeHtml(r.workStatus || "")}</div>
+              </div>
+              <div class="small" style="margin-top:8px">
+                Normal: <b>${Number(r.normalHours || 0)}</b>
+                &nbsp; OT: <b>${Number(r.otHours || 0)}</b>
+                &nbsp; Total: <b>${Number(r.totalHours || 0)}</b>
+              </div>
+              <div class="small muted" style="margin-top:5px">
+                ${escapeHtml(r.location || "")}
+                ${r.correctionStatus && r.correctionStatus !== "None"
+                  ? ` • Correction: ${escapeHtml(r.correctionStatus)}`
+                  : ""}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `).join("");
+
   }catch(err){
     document.getElementById("historyContent").innerHTML =
       `<div class="notice err">${escapeHtml(err.message)}</div>`;
   }
 }
 
-function renderHistory(data){
-  const records = data.records || [];
-  const s = data.summary || {};
+async function loadMonthlyHistory(){
+  return loadHistoryRange();
+}
 
-  document.getElementById("historySummary").innerHTML = `
-    <div class="summary-box"><b>${Number(s.workerCount || 0)}</b><span>WORKERS</span></div>
-    <div class="summary-box"><b>${Number(s.presentEntries || 0)}</b><span>P ENTRIES</span></div>
-    <div class="summary-box"><b>${formatNumber(s.normalHours || 0)}</b><span>NORMAL HRS</span></div>
-    <div class="summary-box"><b>${formatNumber(s.otHours || 0)}</b><span>OT HOURS</span></div>
+
+/* =========================================================
+   MY CURRENT STAFF
+========================================================= */
+
+function renderCurrentStaff(){
+  const list = workers || [];
+
+  document.getElementById("staffSummary").innerHTML = `
+    <div class="summary-box"><b>${list.length}</b><span>Current Staff</span></div>
   `;
 
-  if(!records.length){
-    document.getElementById("historyContent").innerHTML =
-      `<div class="empty">No attendance records for this month.</div>`;
+  if(!list.length){
+    document.getElementById("staffContent").innerHTML =
+      `<div class="empty">No active workers assigned to this supervisor.</div>`;
     return;
   }
 
-  document.getElementById("historyContent").innerHTML = `
-    <div class="history-table-wrap">
+  document.getElementById("staffContent").innerHTML = list.map((w,index) => `
+    <div class="worker-card">
+      <div class="worker-top">
+        <div>
+          <div class="worker-name">${index+1}. ${escapeHtml(w.workerName || "")}</div>
+          <div class="small muted">${escapeHtml(w.workerId || "")}</div>
+        </div>
+      </div>
+      <div class="small" style="margin-top:8px">
+        <b>${escapeHtml(w.designation || "")}</b>
+        ${w.trade ? ` • ${escapeHtml(w.trade)}` : ""}
+      </div>
+      <div class="small muted" style="margin-top:5px">
+        ${escapeHtml(w.location || "")}
+        ${w.project ? ` • ${escapeHtml(w.project)}` : ""}
+      </div>
+    </div>
+  `).join("");
+}
+
+async function refreshStaffList(){
+  try{
+    const data = await apiPost({
+      action:"getWorkers",
+      supervisorId:currentSupervisor.supervisorId
+    });
+
+    workers = data.workers || [];
+    mergeTodayState();
+    renderWorkers();
+    populateTransferWorkers();
+    renderCurrentStaff();
+    showGlobal("Current staff refreshed from Google Sheets.","ok");
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+function printCurrentStaff(){
+  const list = workers || [];
+  const today = getTodayISO();
+  const supervisorName =
+    currentSupervisor.supervisorName ||
+    currentSupervisor.name ||
+    currentSupervisor.supervisorId ||
+    "";
+
+  const rows = list.map((w,index) => `
+    <tr>
+      <td>${index+1}</td>
+      <td>${escapeHtml(w.workerId || "")}</td>
+      <td>${escapeHtml(w.workerName || "")}</td>
+      <td>${escapeHtml(w.designation || "")}</td>
+      <td>${escapeHtml(w.trade || "")}</td>
+      <td>${escapeHtml(w.location || "")}</td>
+      <td>${escapeHtml(w.project || "")}</td>
+    </tr>
+  `).join("");
+
+  const printWindow = window.open("","_blank");
+
+  if(!printWindow){
+    return alert("Please allow pop-ups to view or save the staff list as PDF.");
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Current Manpower List</title>
+      <style>
+        @page{size:A4 landscape;margin:12mm}
+        body{font-family:Arial,sans-serif;color:#111;margin:0}
+        h1{font-size:18px;margin:0 0 5px}
+        h2{font-size:15px;margin:0 0 12px}
+        .meta{font-size:11px;line-height:1.6;margin-bottom:12px}
+        table{width:100%;border-collapse:collapse;font-size:10px}
+        th,td{border:1px solid #555;padding:6px;text-align:left}
+        th{background:#eee}
+        .total{margin:10px 0;font-weight:bold;font-size:11px}
+        .sign{display:flex;justify-content:space-between;margin-top:35px;font-size:11px}
+      </style>
+    </head>
+    <body>
+      <h1>DMT Sea Palace Project</h1>
+      <h2>Current Manpower List</h2>
+      <div class="meta">
+        <b>Supervisor:</b> ${escapeHtml(supervisorName)}<br>
+        <b>Supervisor ID:</b> ${escapeHtml(currentSupervisor.supervisorId || "")}<br>
+        <b>Date:</b> ${escapeHtml(today)}
+      </div>
+      <div class="total">Total Current Staff: ${list.length}</div>
       <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Worker</th>
-            <th>ID</th>
-            <th>Status</th>
-            <th>Normal</th>
-            <th>OT</th>
-            <th>Total</th>
+            <th>#</th>
+            <th>Employee No.</th>
+            <th>Employee Name</th>
+            <th>Designation</th>
+            <th>Trade</th>
             <th>Location</th>
-            <th>Correction</th>
+            <th>Project</th>
           </tr>
         </thead>
-        <tbody>
-          ${records.map(r => `
-            <tr>
-              <td>${escapeHtml(r.date)}</td>
-              <td>${escapeHtml(r.workerName)}</td>
-              <td>${escapeHtml(r.workerId)}</td>
-              <td><span class="status-badge status-${escapeHtml(r.workStatus)}">${escapeHtml(r.workStatus)}</span></td>
-              <td>${formatNumber(r.normalHours)}</td>
-              <td>${formatNumber(r.otHours)}</td>
-              <td>${formatNumber(r.totalHours)}</td>
-              <td>${escapeHtml(r.location || "")}</td>
-              <td>${escapeHtml(r.correctionStatus || "None")}</td>
-            </tr>
-          `).join("")}
-        </tbody>
+        <tbody>${rows}</tbody>
       </table>
-    </div>
-  `;
+      <div class="sign">
+        <div>Prepared by: __________________________</div>
+        <div>Signature: __________________________</div>
+      </div>
+      <script>
+        window.onload = function(){
+          setTimeout(function(){ window.print(); },300);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+
+  printWindow.document.close();
 }
+
 
 /* =========================================================
    TRANSFERS
@@ -1249,14 +1457,18 @@ function updateQueueChip(){
 ========================================================= */
 
 function showView(name,btn){
-  ["Today","History","Transfers","Account"].forEach(v => {
+  ["Today","History","Staff","Transfers","Account"].forEach(v => {
     document.getElementById("view"+v).classList.toggle("hidden",v !== name);
   });
 
   document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
   if(btn) btn.classList.add("active");
 
-  if(name === "History") loadMonthlyHistory();
+  if(name === "History"){
+    setupMonthYearSelectors();
+    loadHistoryRange();
+  }
+  if(name === "Staff") renderCurrentStaff();
   if(name === "Transfers") loadTransfers();
 }
 
