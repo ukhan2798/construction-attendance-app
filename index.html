@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b57d0" />
-  <title>DMT Sea Palace - Site Attendance v8</title>
+  <title>DMT Sea Palace - Site Attendance v10</title>
   <style>
     :root{
       --bg:#eef3f8;
@@ -358,6 +358,24 @@
           </div>
 
           <div id="staffContent"></div>
+
+          <div style="height:1px;background:var(--line);margin:20px 0"></div>
+
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">Drivers / Operators & Equipment</h2>
+              <div class="small muted">Vehicles and equipment currently assigned to your drivers/operators.</div>
+            </div>
+          </div>
+
+          <div id="equipmentSummary" class="summary-grid"></div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-soft" onclick="refreshEquipmentAssignments()">Refresh</button>
+            <button class="btn btn-primary" onclick="printEquipmentAssignments()">View / Print / PDF</button>
+          </div>
+
+          <div id="equipmentContent"></div>
         </div>
       </section>
 
@@ -486,6 +504,7 @@ const STATUS_INFO = {
 
 let supervisors = [];
 let workers = [];
+let equipmentAssignments = [];
 let todayAttendance = [];
 let currentSupervisor = null;
 let correctionTarget = null;
@@ -651,6 +670,7 @@ function logout(){
   sessionStorage.removeItem("attendance_supervisor");
   currentSupervisor = null;
   workers = [];
+  equipmentAssignments = [];
   todayAttendance = [];
   document.getElementById("mainApp").classList.add("hidden");
   document.getElementById("appHeader").classList.add("hidden");
@@ -667,7 +687,7 @@ async function loadCrewAndToday(){
   setWorkerLoading();
 
   try{
-    const [crewData, attendanceData] = await Promise.all([
+    const [crewData, attendanceData, equipmentData] = await Promise.all([
       apiPost({
         action:"getWorkers",
         supervisorId:currentSupervisor.supervisorId
@@ -676,11 +696,16 @@ async function loadCrewAndToday(){
         action:"getTodayAttendance",
         supervisorId:currentSupervisor.supervisorId,
         date:getTodayISO()
+      }),
+      apiPost({
+        action:"getEquipmentAssignments",
+        supervisorId:currentSupervisor.supervisorId
       })
     ]);
 
     workers = crewData.workers || [];
     todayAttendance = attendanceData.records || [];
+    equipmentAssignments = equipmentData.assignments || [];
 
     mergeTodayState();
     renderWorkers();
@@ -1282,6 +1307,199 @@ function printCurrentStaff(){
 
 
 /* =========================================================
+   DRIVERS / OPERATORS & EQUIPMENT
+========================================================= */
+
+function renderEquipmentAssignments(){
+  const summary = document.getElementById("equipmentSummary");
+  const content = document.getElementById("equipmentContent");
+
+  if(!summary || !content) return;
+
+  const list = equipmentAssignments || [];
+
+  summary.innerHTML = `
+    <div class="summary-box"><b>${list.length}</b><span>Assigned Drivers / Operators</span></div>
+  `;
+
+  if(!list.length){
+    content.innerHTML = `
+      <div class="empty">
+        No vehicle/equipment assignments found for this supervisor.
+      </div>
+    `;
+    return;
+  }
+
+  content.innerHTML = list.map((a,index) => `
+    <div class="worker-card">
+      <div class="worker-top">
+        <div>
+          <div class="worker-name">${index+1}. ${escapeHtml(a.employeeName || "")}</div>
+          <div class="small muted">
+            ${escapeHtml(a.employeeId || "")}
+            ${a.designation ? ` • ${escapeHtml(a.designation)}` : ""}
+          </div>
+        </div>
+        <div class="status-pill">${escapeHtml(a.status || "Assigned")}</div>
+      </div>
+
+      <div style="margin-top:9px">
+        <div class="small muted">Vehicle</div>
+        <div style="font-weight:900">${escapeHtml(a.vehicle || "—")}</div>
+      </div>
+
+      <div style="margin-top:7px">
+        <div class="small muted">Equipment</div>
+        <div style="font-weight:900">${escapeHtml(a.equipment || "—")}</div>
+      </div>
+
+      <div class="small" style="margin-top:7px">
+        <b>Plate / Asset No.:</b> ${escapeHtml(a.plateAssetNo || "—")}
+      </div>
+
+      <div class="small" style="margin-top:5px">
+        <b>Location:</b> ${escapeHtml(a.location || "—")}
+      </div>
+
+      ${a.assignedDate ? `
+        <div class="small muted" style="margin-top:5px">
+          Assigned: ${escapeHtml(a.assignedDate)}
+        </div>
+      ` : ""}
+
+      ${a.remarks ? `
+        <div class="small muted" style="margin-top:5px">
+          Remarks: ${escapeHtml(a.remarks)}
+        </div>
+      ` : ""}
+    </div>
+  `).join("");
+}
+
+async function refreshEquipmentAssignments(){
+  if(!currentSupervisor) return;
+
+  try{
+    const data = await apiPost({
+      action:"getEquipmentAssignments",
+      supervisorId:currentSupervisor.supervisorId
+    });
+
+    equipmentAssignments = data.assignments || [];
+    renderEquipmentAssignments();
+
+    if(data.sheetMissing){
+      showGlobal("Equipment Assignments sheet is not created yet.","warn");
+    }else{
+      showGlobal("Driver / Operator assignments refreshed.","ok");
+    }
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+function printEquipmentAssignments(){
+  const list = equipmentAssignments || [];
+  const today = getTodayISO();
+
+  const supervisorName =
+    currentSupervisor.supervisorName ||
+    currentSupervisor.name ||
+    currentSupervisor.supervisorId ||
+    "";
+
+  const rows = list.map((a,index) => `
+    <tr>
+      <td>${index+1}</td>
+      <td>${escapeHtml(a.employeeId || "")}</td>
+      <td>${escapeHtml(a.employeeName || "")}</td>
+      <td>${escapeHtml(a.designation || "")}</td>
+      <td>${escapeHtml(a.vehicle || "")}</td>
+      <td>${escapeHtml(a.equipment || "")}</td>
+      <td>${escapeHtml(a.plateAssetNo || "")}</td>
+      <td>${escapeHtml(a.location || "")}</td>
+      <td>${escapeHtml(a.status || "Assigned")}</td>
+      <td>${escapeHtml(a.assignedDate || "")}</td>
+      <td>${escapeHtml(a.remarks || "")}</td>
+    </tr>
+  `).join("");
+
+  const printWindow = window.open("","_blank");
+
+  if(!printWindow){
+    return alert("Please allow pop-ups to view or save the equipment list as PDF.");
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Drivers Operators Equipment List</title>
+      <style>
+        @page{size:A4 landscape;margin:10mm}
+        body{font-family:Arial,sans-serif;color:#111;margin:0}
+        h1{font-size:18px;margin:0 0 5px}
+        h2{font-size:15px;margin:0 0 12px}
+        .meta{font-size:11px;line-height:1.6;margin-bottom:12px}
+        table{width:100%;border-collapse:collapse;font-size:9px}
+        th,td{border:1px solid #555;padding:5px;text-align:left}
+        th{background:#eee}
+        .total{margin:10px 0;font-weight:bold;font-size:11px}
+        .sign{display:flex;justify-content:space-between;margin-top:35px;font-size:11px}
+      </style>
+    </head>
+    <body>
+      <h1>DMT Sea Palace Project</h1>
+      <h2>Drivers / Operators & Equipment List</h2>
+
+      <div class="meta">
+        <b>Supervisor:</b> ${escapeHtml(supervisorName)}<br>
+        <b>Supervisor ID:</b> ${escapeHtml(currentSupervisor.supervisorId || "")}<br>
+        <b>Date:</b> ${escapeHtml(today)}
+      </div>
+
+      <div class="total">Total Assigned Drivers / Operators: ${list.length}</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Employee No.</th>
+            <th>Employee Name</th>
+            <th>Designation</th>
+            <th>Vehicle</th>
+            <th>Equipment</th>
+            <th>Plate / Asset No.</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Assigned Date</th>
+            <th>Remarks</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+
+      <div class="sign">
+        <div>Prepared by: __________________________</div>
+        <div>Signature: __________________________</div>
+      </div>
+
+      <script>
+        window.onload = function(){
+          setTimeout(function(){ window.print(); },300);
+        };
+      <\/script>
+    </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+}
+
+
+/* =========================================================
    TRANSFERS
 ========================================================= */
 
@@ -1468,7 +1686,10 @@ function showView(name,btn){
     setupMonthYearSelectors();
     loadHistoryRange();
   }
-  if(name === "Staff") renderCurrentStaff();
+  if(name === "Staff"){
+    renderCurrentStaff();
+    renderEquipmentAssignments();
+  }
   if(name === "Transfers") loadTransfers();
 }
 
