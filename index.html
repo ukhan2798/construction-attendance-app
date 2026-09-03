@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b57d0" />
-  <title>DMT Sea Palace - Site Attendance v10</title>
+  <title>DMT Sea Palace - Site Attendance v11</title>
   <style>
     :root{
       --bg:#eef3f8;
@@ -142,7 +142,7 @@
     .nav{
       position:fixed;bottom:0;left:0;right:0;z-index:30;
       background:white;border-top:1px solid var(--line);
-      display:grid;grid-template-columns:repeat(5,1fr);
+      display:grid;grid-template-columns:repeat(6,1fr);
       padding:7px 8px calc(7px + env(safe-area-inset-bottom))
     }
     .nav button{
@@ -151,6 +151,68 @@
     }
     .nav button.active{background:#e8f0fe;color:var(--primary)}
     .nav-icon{display:block;font-size:19px;margin-bottom:3px}
+    .monthly-toolbar{
+      display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-bottom:12px
+    }
+    .monthly-wrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:white;
+      -webkit-overflow-scrolling:touch;
+    }
+    .monthly-sheet{
+      border-collapse:collapse;
+      min-width:1750px;
+      width:max-content;
+      background:white;
+    }
+    .monthly-sheet th,.monthly-sheet td{
+      border:1px solid #98a2b3;
+      padding:4px 5px;
+      text-align:center;
+      font-size:10px;
+      white-space:nowrap;
+      height:27px;
+    }
+    .monthly-sheet thead th{
+      position:sticky;top:0;z-index:4;
+      background:#fff200;color:#111;font-weight:900;
+    }
+    .monthly-sheet .emp{
+      position:sticky;left:0;z-index:3;
+      min-width:190px;max-width:190px;text-align:left;
+      background:white;font-weight:900;padding:6px 8px;
+    }
+    .monthly-sheet thead .emp{z-index:6;background:#fff200}
+    .monthly-sheet .meta{
+      display:block;font-size:9px;font-weight:600;color:#667085;margin-top:2px
+    }
+    .monthly-sheet .row-label{
+      position:sticky;left:190px;z-index:3;
+      min-width:48px;background:#fff200;font-weight:900;
+    }
+    .monthly-sheet thead .row-label{z-index:6}
+    .monthly-sheet .dow{font-size:8px;background:#f8fafc;font-weight:800}
+    .monthly-sheet .sun{background:#ecff00!important;color:#078313;font-weight:900}
+    .monthly-sheet .future{background:#f2f4f7;color:#98a2b3}
+    .monthly-sheet .missing{background:#fff4ce;color:#8a4b00;font-weight:800}
+    .monthly-sheet .locked-cell{background:#f8fafc;font-weight:900}
+    .monthly-sheet .today-cell{outline:2px solid var(--primary);outline-offset:-2px}
+    .monthly-sheet select{
+      width:52px;min-width:52px;border:0;border-radius:4px;padding:2px 1px;
+      font-size:10px;font-weight:900;background:#e8f0fe;color:#0b57d0
+    }
+    .monthly-sheet input[type="number"]{
+      width:46px;min-width:46px;border:1px solid #cbd5e1;border-radius:5px;
+      padding:3px;text-align:center;font-size:10px
+    }
+    .monthly-sheet .total-head{background:#f2f4f7!important}
+    .monthly-sheet .total-val{font-weight:900;background:#fff}
+    .monthly-sheet .ot-total{color:#d93025;font-weight:900}
+    .monthly-note{
+      font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4
+    }
     .notice{
       border-radius:12px;padding:11px 12px;margin-bottom:12px;font-size:13px;font-weight:700
     }
@@ -274,6 +336,44 @@
           <button class="btn btn-primary full" id="submitBtn" onclick="submitAttendance()">
             Submit Today's Attendance
           </button>
+        </div>
+      </section>
+
+      <!-- MONTHLY TIMESHEET -->
+      <section id="viewMonthly" class="hidden">
+        <div class="card">
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">Monthly Timesheet</h2>
+              <div class="small muted">Daily entry in familiar monthly format. Only today's unsubmitted cells are editable.</div>
+            </div>
+            <button class="btn btn-soft" onclick="loadMonthlyTimesheet()">↻ Refresh</button>
+          </div>
+
+          <div class="monthly-toolbar">
+            <div class="field" style="margin:0">
+              <label>Month</label>
+              <input id="monthlyMonth" type="month" onchange="loadMonthlyTimesheet()">
+            </div>
+            <button class="btn btn-primary" onclick="submitMonthlyToday()">Submit Today</button>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-box"><b id="monthWorkers">0</b><span>WORKERS</span></div>
+            <div class="summary-box"><b id="monthPresent">0</b><span>P TODAY</span></div>
+            <div class="summary-box"><b id="monthMissing">0</b><span>MISSING DAYS</span></div>
+            <div class="summary-box"><b id="monthOT">0</b><span>MONTH OT</span></div>
+          </div>
+
+          <div id="monthlyStatusNotice"></div>
+          <div id="monthlyTimesheetContent" class="monthly-wrap">
+            <div class="empty">Open this view to load the monthly timesheet.</div>
+          </div>
+
+          <div class="monthly-note">
+            🔒 Submitted days are locked. Grey cells are future dates. Yellow/orange “Missing” cells mean no attendance was submitted for that past date.
+            Tap a submitted WORK status to request a correction.
+          </div>
         </div>
       </section>
 
@@ -404,6 +504,9 @@
     <button class="active" data-view="Today" onclick="showView('Today',this)">
       <span class="nav-icon">✓</span>Today
     </button>
+    <button data-view="Monthly" onclick="showView('Monthly',this)">
+      <span class="nav-icon">▦</span>Month
+    </button>
     <button data-view="History" onclick="showView('History',this)">
       <span class="nav-icon">▦</span>History
     </button>
@@ -506,6 +609,8 @@ let supervisors = [];
 let workers = [];
 let equipmentAssignments = [];
 let todayAttendance = [];
+let monthlyRecords = [];
+let monthlyRoster = [];
 let currentSupervisor = null;
 let correctionTarget = null;
 
@@ -960,12 +1065,345 @@ async function submitAttendance(){
     }else{
       showGlobal("Attendance submitted successfully.","ok");
       await loadCrewAndToday();
+      if(!document.getElementById("viewMonthly").classList.contains("hidden")){
+        await loadMonthlyTimesheet();
+      }
     }
   }catch(err){
     showGlobal(err.message,"err");
     updateSubmitButton();
   }
 }
+
+/* =========================================================
+   MONTHLY TIMESHEET
+========================================================= */
+
+function monthlyIso(y,m,d){
+  return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+
+function monthDays(year,month){
+  return new Date(year,month,0).getDate();
+}
+
+function parseMonthValue(value){
+  const [year,month] = String(value || "").split("-").map(Number);
+  return {year,month};
+}
+
+function monthlyRecordMap(){
+  const map = new Map();
+  (monthlyRecords || []).forEach(r => {
+    map.set(`${r.workerId}|${r.date}`,r);
+  });
+  return map;
+}
+
+function buildMonthlyRoster(){
+  const map = new Map();
+
+  (workers || []).forEach(w => {
+    map.set(String(w.workerId),{
+      workerId:w.workerId,
+      workerName:w.workerName,
+      designation:w.designation || "",
+      location:w.location || ""
+    });
+  });
+
+  (monthlyRecords || []).forEach(r => {
+    if(!map.has(String(r.workerId))){
+      map.set(String(r.workerId),{
+        workerId:r.workerId,
+        workerName:r.workerName,
+        designation:r.designation || "",
+        location:r.location || ""
+      });
+    }
+  });
+
+  monthlyRoster = Array.from(map.values()).sort((a,b) =>
+    String(a.workerName || "").localeCompare(String(b.workerName || ""))
+  );
+}
+
+async function loadMonthlyTimesheet(){
+  if(!currentSupervisor) return;
+
+  const monthInput = document.getElementById("monthlyMonth");
+
+  if(!monthInput.value){
+    monthInput.value = getTodayISO().slice(0,7);
+  }
+
+  const {year,month} = parseMonthValue(monthInput.value);
+  if(!year || !month) return;
+
+  const fromDate = monthlyIso(year,month,1);
+  const toDate = monthlyIso(year,month,monthDays(year,month));
+
+  document.getElementById("monthlyTimesheetContent").innerHTML =
+    `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading monthly timesheet...</div></div>`;
+
+  try{
+    const data = await apiPost({
+      action:"getAttendanceRange",
+      supervisorId:currentSupervisor.supervisorId,
+      fromDate,
+      toDate
+    });
+
+    monthlyRecords = data.records || [];
+    buildMonthlyRoster();
+    renderMonthlyTimesheet();
+  }catch(err){
+    document.getElementById("monthlyTimesheetContent").innerHTML =
+      `<div class="notice err">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function monthlyStatusSelect(workerId,value){
+  const current = workers.find(w => String(w.workerId) === String(workerId));
+  if(!current || current.submitted) return;
+
+  const info = STATUS_INFO[value] || STATUS_INFO.P;
+  current.workStatus = value;
+  current.normalHours = info.normal;
+
+  if(!info.ot) current.otHours = 0;
+
+  current.totalHours = Number(current.normalHours) + Number(current.otHours || 0);
+  renderMonthlyTimesheet();
+}
+
+function monthlyOTChange(workerId,value){
+  const current = workers.find(w => String(w.workerId) === String(workerId));
+  if(!current || current.submitted) return;
+
+  const info = STATUS_INFO[current.workStatus] || STATUS_INFO.P;
+
+  let v = Number(value);
+  if(!Number.isFinite(v)) v = 0;
+  v = Math.max(0,Math.min(8,v));
+  v = Math.round(v*2)/2;
+
+  current.otHours = info.ot ? v : 0;
+  current.totalHours = Number(current.normalHours || 0) + Number(current.otHours || 0);
+
+  renderMonthlyTimesheet();
+}
+
+function monthlyCorrection(workerId,date){
+  const rec = (monthlyRecords || []).find(r =>
+    String(r.workerId) === String(workerId) && r.date === date
+  );
+
+  if(!rec) return;
+
+  correctionTarget = {
+    workerId:rec.workerId,
+    workerName:rec.workerName,
+    designation:rec.designation || "",
+    location:rec.location || "",
+    workStatus:rec.workStatus,
+    otHours:Number(rec.otHours || 0),
+    submitted:true,
+    correctionStatus:rec.correctionStatus || "None",
+    date:date
+  };
+
+  document.getElementById("correctionWorkerText").textContent =
+    `${rec.workerName} (${rec.workerId}) • ${date} • Current: ${rec.workStatus} • OT: ${rec.otHours}`;
+
+  document.getElementById("correctionStatus").value = rec.workStatus;
+  document.getElementById("correctionOT").value = Number(rec.otHours || 0);
+  document.getElementById("correctionReason").value = "";
+  updateCorrectionOtState();
+
+  document.getElementById("correctionModal").classList.remove("hidden");
+}
+
+function renderMonthlyTimesheet(){
+  const content = document.getElementById("monthlyTimesheetContent");
+  const monthInput = document.getElementById("monthlyMonth");
+  const {year,month} = parseMonthValue(monthInput.value);
+  const days = monthDays(year,month);
+  const today = getTodayISO();
+  const selectedIsCurrentMonth = monthInput.value === today.slice(0,7);
+  const todayDay = Number(today.slice(8,10));
+  const recMap = monthlyRecordMap();
+
+  if(!monthlyRoster.length){
+    content.innerHTML = `<div class="empty">No workers or attendance found for this month.</div>`;
+    document.getElementById("monthWorkers").textContent = "0";
+    document.getElementById("monthPresent").textContent = "0";
+    document.getElementById("monthMissing").textContent = "0";
+    document.getElementById("monthOT").textContent = "0";
+    return;
+  }
+
+  let missingCount = 0;
+  let monthOT = 0;
+
+  monthlyRecords.forEach(r => monthOT += Number(r.otHours || 0));
+
+  const currentTodayPresent = workers.filter(w => {
+    const rec = recMap.get(`${w.workerId}|${today}`);
+    return rec ? rec.workStatus === "P" : w.workStatus === "P";
+  }).length;
+
+  const dayHeaders = Array.from({length:days},(_,i) => {
+    const d = i+1;
+    const date = new Date(year,month-1,d);
+    const dow = date.toLocaleDateString("en-US",{weekday:"short"});
+    const sun = dow === "Sun" ? " sun" : "";
+    return `<th class="${sun}">${d}<div class="dow">${dow}</div></th>`;
+  }).join("");
+
+  const totalHeaders = ["P","AL","SL","A","OFF","PH","BD","TOTAL","OT"];
+
+  let rowsHtml = "";
+
+  monthlyRoster.forEach((person,index) => {
+    const counts = {P:0,AL:0,SL:0,A:0,OFF:0,PH:0,BD:0};
+    let workerMonthOT = 0;
+    let workCells = "";
+    let otCells = "";
+
+    for(let d=1; d<=days; d++){
+      const dateStr = monthlyIso(year,month,d);
+      const dateObj = new Date(year,month-1,d);
+      const dow = dateObj.toLocaleDateString("en-US",{weekday:"short"});
+      const isSun = dow === "Sun";
+      const isToday = dateStr === today;
+      const isFuture = dateStr > today;
+      const rec = recMap.get(`${person.workerId}|${dateStr}`);
+      const currentWorker = workers.find(w => String(w.workerId) === String(person.workerId));
+
+      if(rec){
+        if(counts[rec.workStatus] !== undefined) counts[rec.workStatus]++;
+        workerMonthOT += Number(rec.otHours || 0);
+
+        const correction = String(rec.correctionStatus || "").toLowerCase();
+        const correctionText = correction === "pending" ? " ⏳" : "";
+
+        workCells += `
+          <td
+            class="locked-cell ${isSun ? "sun" : ""} ${isToday ? "today-cell" : ""}"
+            title="Submitted. Tap to request correction."
+            onclick="monthlyCorrection('${escapeHtml(String(person.workerId))}','${dateStr}')"
+          >${escapeHtml(rec.workStatus)}${correctionText}</td>
+        `;
+
+        otCells += `
+          <td class="locked-cell ${isSun ? "sun" : ""} ${isToday ? "today-cell" : ""}">
+            ${Number(rec.otHours || 0) ? formatNumber(rec.otHours) : ""}
+          </td>
+        `;
+      }else if(isToday && selectedIsCurrentMonth && currentWorker && !currentWorker.submitted){
+        const info = STATUS_INFO[currentWorker.workStatus] || STATUS_INFO.P;
+
+        workCells += `
+          <td class="${isSun ? "sun" : ""} today-cell">
+            <select onchange="monthlyStatusSelect('${escapeHtml(String(person.workerId))}',this.value)">
+              ${Object.entries(STATUS_INFO).map(([code,meta]) =>
+                `<option value="${code}" ${currentWorker.workStatus===code ? "selected" : ""}>${code}</option>`
+              ).join("")}
+            </select>
+          </td>
+        `;
+
+        otCells += `
+          <td class="${isSun ? "sun" : ""} today-cell">
+            <input
+              type="number"
+              min="0" max="8" step="0.5"
+              value="${Number(currentWorker.otHours || 0)}"
+              ${!info.ot ? "disabled" : ""}
+              onchange="monthlyOTChange('${escapeHtml(String(person.workerId))}',this.value)"
+            >
+          </td>
+        `;
+      }else if(isFuture){
+        workCells += `<td class="future ${isSun ? "sun" : ""}"></td>`;
+        otCells += `<td class="future ${isSun ? "sun" : ""}"></td>`;
+      }else{
+        // Past date with no attendance record.
+        missingCount++;
+        workCells += `<td class="missing ${isSun ? "sun" : ""}" title="Attendance not submitted">!</td>`;
+        otCells += `<td class="missing ${isSun ? "sun" : ""}"></td>`;
+      }
+    }
+
+    const totalVals = [
+      counts.P,counts.AL,counts.SL,counts.A,counts.OFF,counts.PH,counts.BD,
+      counts.P+counts.AL+counts.SL+counts.A+counts.OFF+counts.PH+counts.BD,
+      formatNumber(workerMonthOT)
+    ];
+
+    rowsHtml += `
+      <tr>
+        <td class="emp" rowspan="2">
+          ${index+1}. ${escapeHtml(person.workerName || "")}
+          <span class="meta">${escapeHtml(person.workerId || "")} • ${escapeHtml(person.designation || "")}</span>
+          <span class="meta">${escapeHtml(person.location || "")}</span>
+        </td>
+        <td class="row-label">WORK</td>
+        ${workCells}
+        ${totalVals.map((v,i) =>
+          `<td class="total-val ${i===8 ? "ot-total" : ""}" rowspan="${i===8 ? 2 : 1}">${v}</td>`
+        ).join("")}
+      </tr>
+      <tr>
+        <td class="row-label">OT</td>
+        ${otCells}
+        ${totalVals.slice(0,8).map(() => `<td class="total-val"></td>`).join("")}
+      </tr>
+    `;
+  });
+
+  content.innerHTML = `
+    <table class="monthly-sheet">
+      <thead>
+        <tr>
+          <th class="emp">Employee</th>
+          <th class="row-label">DAY</th>
+          ${dayHeaders}
+          ${totalHeaders.map(h => `<th class="total-head">${h}</th>`).join("")}
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  `;
+
+  document.getElementById("monthWorkers").textContent = monthlyRoster.length;
+  document.getElementById("monthPresent").textContent = currentTodayPresent;
+  document.getElementById("monthMissing").textContent = missingCount;
+  document.getElementById("monthOT").textContent = formatNumber(monthOT);
+
+  const notice = document.getElementById("monthlyStatusNotice");
+
+  if(monthInput.value > today.slice(0,7)){
+    notice.innerHTML = `<div class="notice warn">Future month: view only.</div>`;
+  }else if(monthInput.value < today.slice(0,7)){
+    notice.innerHTML = `<div class="notice ok">Previous month: submitted records are read-only. Tap a WORK cell for correction request.</div>`;
+  }else{
+    notice.innerHTML = `<div class="notice ok">Today's column is editable until submitted. Previous submitted days are locked.</div>`;
+  }
+}
+
+async function submitMonthlyToday(){
+  const monthInput = document.getElementById("monthlyMonth");
+
+  if(monthInput.value !== getTodayISO().slice(0,7)){
+    return alert("Open the current month to submit today's attendance.");
+  }
+
+  await submitAttendance();
+  await loadMonthlyTimesheet();
+}
+
 
 /* =========================================================
    CORRECTION REQUEST
@@ -975,9 +1413,9 @@ function openCorrectionModal(index){
   const w = workers[index];
   if(!w || !w.submitted) return;
 
-  correctionTarget = w;
+  correctionTarget = {...w,date:getTodayISO()};
   document.getElementById("correctionWorkerText").textContent =
-    `${w.workerName} (${w.workerId}) • Current: ${w.workStatus} • OT: ${w.otHours}`;
+    `${w.workerName} (${w.workerId}) • ${getTodayISO()} • Current: ${w.workStatus} • OT: ${w.otHours}`;
 
   document.getElementById("correctionStatus").value = w.workStatus;
   document.getElementById("correctionOT").value = Number(w.otHours || 0);
@@ -1015,7 +1453,7 @@ async function sendCorrectionRequest(){
     const data = await apiPost({
       action:"requestCorrection",
       supervisorId:currentSupervisor.supervisorId,
-      date:getTodayISO(),
+      date:correctionTarget.date || getTodayISO(),
       workerId:correctionTarget.workerId,
       requestedStatus,
       requestedOT,
@@ -1675,13 +2113,18 @@ function updateQueueChip(){
 ========================================================= */
 
 function showView(name,btn){
-  ["Today","History","Staff","Transfers","Account"].forEach(v => {
+  ["Today","Monthly","History","Staff","Transfers","Account"].forEach(v => {
     document.getElementById("view"+v).classList.toggle("hidden",v !== name);
   });
 
   document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
   if(btn) btn.classList.add("active");
 
+  if(name === "Monthly"){
+    const monthInput = document.getElementById("monthlyMonth");
+    if(monthInput && !monthInput.value) monthInput.value = getTodayISO().slice(0,7);
+    loadMonthlyTimesheet();
+  }
   if(name === "History"){
     setupMonthYearSelectors();
     loadHistoryRange();
