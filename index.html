@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0b57d0" />
-  <title>DMT Sea Palace - Site Attendance v11</title>
+  <title>DMT Sea Palace - Site Attendance v13</title>
   <style>
     :root{
       --bg:#eef3f8;
@@ -151,67 +151,121 @@
     }
     .nav button.active{background:#e8f0fe;color:var(--primary)}
     .nav-icon{display:block;font-size:19px;margin-bottom:3px}
-    .monthly-toolbar{
-      display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-bottom:12px
+    .ts-shell{
+      background:#f4f6f9;border:1px solid #cfd5dc;border-radius:12px;
+      overflow:hidden
+    }
+    .ts-project-head{
+      background:#fff;border-bottom:1px solid #9aa1aa;
+      padding:10px 12px;text-align:center
+    }
+    .ts-project-head .project-title{
+      font-size:12px;font-weight:900;color:#1f2937;text-transform:uppercase
+    }
+    .ts-project-head .month-title{
+      margin-top:5px;font-size:12px;font-weight:900;color:#111827;text-transform:uppercase
+    }
+    .ts-legend{
+      display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;
+      padding:7px 10px;background:#eef3f7;border-bottom:1px solid #cfd5dc;
+      font-size:10px;font-weight:800
+    }
+    .ts-legend-item{display:flex;align-items:center;gap:4px}
+    .ts-code{
+      min-width:24px;padding:3px 5px;border:1px solid #b8c0ca;border-radius:4px;
+      text-align:center;background:white;font-weight:900
+    }
+    .ts-code.al{background:#c9f4ff}
+    .ts-code.sl{background:#ffd8df}
+    .ts-code.a{background:#ffc8cf}
+    .ts-code.off{background:#ecff00}
+    .ts-code.ph{background:#d7f7df}
+    .ts-code.bd{background:#e1d2ff}
+    .ts-controls{
+      display:flex;align-items:end;gap:8px;flex-wrap:wrap;
+      padding:10px;background:#e6ebf1;border-bottom:1px solid #cfd5dc
+    }
+    .ts-controls .field{margin:0;min-width:150px}
+    .ts-controls .field label{font-size:10px}
+    .ts-control-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+    .ts-validation{
+      margin:8px 10px 0;padding:7px 10px;border:1px solid #9de5bf;
+      background:#e7fff1;color:#087443;border-radius:7px;font-size:10px;font-weight:900
+    }
+    .ts-summary{
+      padding:8px 10px;font-size:10px;color:#475467;font-weight:700
     }
     .monthly-wrap{
-      overflow:auto;
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:white;
+      overflow:auto;padding:0 10px 12px;background:#fff;
       -webkit-overflow-scrolling:touch;
     }
-    .monthly-sheet{
-      border-collapse:collapse;
-      min-width:1750px;
-      width:max-content;
-      background:white;
+    .ts-employee-block{
+      min-width:1480px;border:1px solid #111;margin:10px 0 15px;background:#fff
     }
-    .monthly-sheet th,.monthly-sheet td{
-      border:1px solid #98a2b3;
-      padding:4px 5px;
-      text-align:center;
-      font-size:10px;
-      white-space:nowrap;
-      height:27px;
+    .ts-employee-head{
+      display:grid;
+      grid-template-columns:34px minmax(220px,1.4fr) minmax(150px,.8fr) 120px 150px 92px;
+      gap:8px;align-items:center;padding:6px 8px;border-bottom:1px solid #111;
+      background:#fff;font-size:10px
     }
-    .monthly-sheet thead th{
-      position:sticky;top:0;z-index:4;
-      background:#fff200;color:#111;font-weight:900;
+    .ts-seq{font-weight:900;text-align:center}
+    .ts-fieldbox{
+      border:1px solid #c7d0db;border-radius:5px;padding:5px 8px;
+      background:#fbfdff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      font-weight:800
     }
-    .monthly-sheet .emp{
-      position:sticky;left:0;z-index:3;
-      min-width:190px;max-width:190px;text-align:left;
-      background:white;font-weight:900;padding:6px 8px;
+    .ts-verified{
+      color:#008a5a;border:1px solid #76dcb6;background:#e9fff6;
+      border-radius:5px;padding:5px 7px;text-align:center;font-weight:900
     }
-    .monthly-sheet thead .emp{z-index:6;background:#fff200}
-    .monthly-sheet .meta{
-      display:block;font-size:9px;font-weight:600;color:#667085;margin-top:2px
+    .ts-grid{
+      border-collapse:collapse;width:100%;table-layout:fixed;min-width:1480px
     }
-    .monthly-sheet .row-label{
-      position:sticky;left:190px;z-index:3;
-      min-width:48px;background:#fff200;font-weight:900;
+    .ts-grid th,.ts-grid td{
+      border:1px solid #111;text-align:center;padding:0;
+      height:26px;font-size:9px;white-space:nowrap
     }
-    .monthly-sheet thead .row-label{z-index:6}
-    .monthly-sheet .dow{font-size:8px;background:#f8fafc;font-weight:800}
-    .monthly-sheet .sun{background:#ecff00!important;color:#078313;font-weight:900}
-    .monthly-sheet .future{background:#f2f4f7;color:#98a2b3}
-    .monthly-sheet .missing{background:#fff4ce;color:#8a4b00;font-weight:800}
-    .monthly-sheet .locked-cell{background:#f8fafc;font-weight:900}
-    .monthly-sheet .today-cell{outline:2px solid var(--primary);outline-offset:-2px}
-    .monthly-sheet select{
-      width:52px;min-width:52px;border:0;border-radius:4px;padding:2px 1px;
-      font-size:10px;font-weight:900;background:#e8f0fe;color:#0b57d0
+    .ts-grid .ts-row-label{
+      width:48px;min-width:48px;background:#fff200;font-weight:900
     }
-    .monthly-sheet input[type="number"]{
-      width:46px;min-width:46px;border:1px solid #cbd5e1;border-radius:5px;
-      padding:3px;text-align:center;font-size:10px
+    .ts-grid .ts-day{
+      width:42px;min-width:42px;background:#fff200;font-weight:900
     }
-    .monthly-sheet .total-head{background:#f2f4f7!important}
-    .monthly-sheet .total-val{font-weight:900;background:#fff}
-    .monthly-sheet .ot-total{color:#d93025;font-weight:900}
+    .ts-grid .ts-dow{
+      height:22px;background:#fff;font-size:8px;font-weight:900
+    }
+    .ts-grid .ts-total-head{
+      width:30px;min-width:30px;background:#fff;font-weight:900
+    }
+    .ts-grid .ts-total-wide{width:42px;min-width:42px}
+    .ts-grid .sun{background:#ecff00!important;color:#078313;font-weight:900}
+    .ts-grid .future{background:#f1f3f4;color:#a0a7b0}
+    .ts-grid .missing{background:#fff1cf;color:#b15b00;font-weight:900}
+    .ts-grid .locked-cell{background:#fff;font-weight:900;cursor:pointer}
+    .ts-grid .today-cell{
+      box-shadow:inset 0 0 0 2px #0b57d0;background:#eef5ff
+    }
+    .ts-grid select{
+      width:100%;height:25px;border:0;background:#e8f0fe;
+      color:#0b57d0;font-size:9px;font-weight:900;text-align:center
+    }
+    .ts-grid input[type="number"]{
+      width:100%;height:24px;border:0;background:#fff;text-align:center;
+      font-size:9px;font-weight:800
+    }
+    .ts-grid .ot-total-text{
+      text-align:right;padding-right:8px;color:#e00000;font-weight:900;font-size:9px
+    }
     .monthly-note{
-      font-size:11px;color:var(--muted);margin-top:8px;line-height:1.4
+      padding:0 10px 12px;font-size:10px;color:#667085;line-height:1.45
+    }
+    @media(max-width:700px){
+      .ts-controls .field{min-width:130px;flex:1}
+      .ts-control-actions{width:100%;margin-left:0}
+      .ts-control-actions .btn{flex:1}
+      .ts-project-head .project-title{font-size:10px}
+      .ts-project-head .month-title{font-size:10px}
+      .ts-legend{justify-content:flex-start;overflow:auto;flex-wrap:nowrap}
     }
     .notice{
       border-radius:12px;padding:11px 12px;margin-bottom:12px;font-size:13px;font-weight:700
@@ -341,38 +395,66 @@
 
       <!-- MONTHLY TIMESHEET -->
       <section id="viewMonthly" class="hidden">
-        <div class="card">
-          <div class="section-title">
-            <div>
-              <h2 style="margin-bottom:3px">Monthly Timesheet</h2>
-              <div class="small muted">Daily entry in familiar monthly format. Only today's unsubmitted cells are editable.</div>
-            </div>
-            <button class="btn btn-soft" onclick="loadMonthlyTimesheet()">↻ Refresh</button>
+        <div class="ts-shell">
+          <div class="ts-project-head">
+            <div class="project-title">DMT SEA PALACE PROJECT</div>
+            <div class="month-title" id="timesheetMonthTitle">MANPOWER TIMESHEET</div>
           </div>
 
-          <div class="monthly-toolbar">
-            <div class="field" style="margin:0">
+          <div class="ts-legend">
+            <span class="ts-legend-item"><span class="ts-code">P</span> Present</span>
+            <span class="ts-legend-item"><span class="ts-code al">AL</span> Annual Leave</span>
+            <span class="ts-legend-item"><span class="ts-code sl">SL</span> Sick Leave</span>
+            <span class="ts-legend-item"><span class="ts-code a">A</span> Absent</span>
+            <span class="ts-legend-item"><span class="ts-code off">OFF</span> Weekly Off</span>
+            <span class="ts-legend-item"><span class="ts-code ph">PH</span> Public Holiday</span>
+            <span class="ts-legend-item"><span class="ts-code bd">BD</span> Breakdown</span>
+          </div>
+
+          <div class="ts-validation" id="monthlyValidation">
+            ✓ Connected to Google Attendance — submitted dates are locked.
+          </div>
+
+          <div class="ts-controls">
+            <div class="field">
               <label>Month</label>
               <input id="monthlyMonth" type="month" onchange="loadMonthlyTimesheet()">
             </div>
-            <button class="btn btn-primary" onclick="submitMonthlyToday()">Submit Today</button>
+
+            <div class="field">
+              <label>Location</label>
+              <select id="monthlyLocation" onchange="renderMonthlyTimesheet()">
+                <option value="ALL">All Locations</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>View</label>
+              <select id="monthlyViewMode" onchange="renderMonthlyTimesheet()">
+                <option value="ALL">All Employees</option>
+                <option value="MISSING">Missing Attendance</option>
+              </select>
+            </div>
+
+            <div class="ts-control-actions">
+              <button class="btn btn-soft" onclick="loadMonthlyTimesheet()">↻ Refresh</button>
+              <button class="btn btn-primary" onclick="submitMonthlyToday()">✓ Submit Today</button>
+            </div>
           </div>
 
-          <div class="summary-grid">
-            <div class="summary-box"><b id="monthWorkers">0</b><span>WORKERS</span></div>
-            <div class="summary-box"><b id="monthPresent">0</b><span>P TODAY</span></div>
-            <div class="summary-box"><b id="monthMissing">0</b><span>MISSING DAYS</span></div>
-            <div class="summary-box"><b id="monthOT">0</b><span>MONTH OT</span></div>
+          <div class="ts-summary" id="monthlySummaryLine">
+            Loading supervisor timesheet...
           </div>
 
-          <div id="monthlyStatusNotice"></div>
+          <div id="monthlyStatusNotice" style="padding:0 10px"></div>
+
           <div id="monthlyTimesheetContent" class="monthly-wrap">
             <div class="empty">Open this view to load the monthly timesheet.</div>
           </div>
 
           <div class="monthly-note">
-            🔒 Submitted days are locked. Grey cells are future dates. Yellow/orange “Missing” cells mean no attendance was submitted for that past date.
-            Tap a submitted WORK status to request a correction.
+            Today’s WORK and OT cells are editable until submitted. Previous submitted days are locked.
+            A missing past date is highlighted. Tap a submitted WORK cell to request a correction.
           </div>
         </div>
       </section>
@@ -630,13 +712,28 @@ async function init(){
   const saved = sessionStorage.getItem("attendance_supervisor");
   if(saved){
     try{
-      currentSupervisor = JSON.parse(saved);
+      const restored = JSON.parse(saved);
+      currentSupervisor =
+        restored?.supervisor ||
+        restored?.user ||
+        restored;
+
+      if(!currentSupervisor || !currentSupervisor.supervisorId){
+        throw new Error("Saved supervisor session is invalid.");
+      }
+
       showMainApp();
       await loadSupervisors();
       await loadCrewAndToday();
       return;
     }catch(e){
       sessionStorage.removeItem("attendance_supervisor");
+      currentSupervisor = null;
+
+      document.getElementById("mainApp").classList.add("hidden");
+      document.getElementById("appHeader").classList.add("hidden");
+      document.getElementById("bottomNav").classList.add("hidden");
+      document.getElementById("loginView").classList.remove("hidden");
     }
   }
 
@@ -710,7 +807,7 @@ async function loadSupervisors(){
   const select = document.getElementById("loginSupervisor");
   try{
     const data = await apiPost({action:"getSupervisors"});
-    supervisors = data.supervisors || [];
+    supervisors = (data.supervisors || []).filter(s => s && s.supervisorId);
 
     select.innerHTML = `<option value="">Select Supervisor</option>` +
       supervisors.map(s =>
@@ -743,7 +840,23 @@ async function login(){
       pin
     });
 
-    currentSupervisor = data.supervisor;
+    currentSupervisor =
+      data.supervisor ||
+      data.user ||
+      (
+        data.supervisorId
+          ? {
+              supervisorId:data.supervisorId,
+              supervisorName:data.supervisorName || data.name || data.supervisorId,
+              project:data.project || ""
+            }
+          : null
+      );
+
+    if(!currentSupervisor || !currentSupervisor.supervisorId){
+      throw new Error("Login succeeded but supervisor details were not returned. Please deploy the latest Apps Script.");
+    }
+
     sessionStorage.setItem("attendance_supervisor",JSON.stringify(currentSupervisor));
     showMainApp();
     await loadCrewAndToday();
@@ -756,6 +869,10 @@ async function login(){
 }
 
 function showMainApp(){
+  if(!currentSupervisor || !currentSupervisor.supervisorId){
+    throw new Error("Supervisor session is missing. Please log in again.");
+  }
+
   document.getElementById("loginView").classList.add("hidden");
   document.getElementById("mainApp").classList.remove("hidden");
   document.getElementById("appHeader").classList.remove("hidden");
@@ -792,6 +909,9 @@ async function loadCrewAndToday(){
   setWorkerLoading();
 
   try{
+    if(!currentSupervisor || !currentSupervisor.supervisorId){
+      throw new Error("Supervisor session expired. Please log out and log in again.");
+    }
     const [crewData, attendanceData, equipmentData] = await Promise.all([
       apiPost({
         action:"getWorkers",
@@ -1126,6 +1246,16 @@ function buildMonthlyRoster(){
   monthlyRoster = Array.from(map.values()).sort((a,b) =>
     String(a.workerName || "").localeCompare(String(b.workerName || ""))
   );
+
+  const locationSelect = document.getElementById("monthlyLocation");
+  if(locationSelect){
+    const oldValue = locationSelect.value || "ALL";
+    const locations = [...new Set(monthlyRoster.map(w => String(w.location || "").trim()).filter(Boolean))].sort();
+    locationSelect.innerHTML =
+      `<option value="ALL">All Locations</option>` +
+      locations.map(loc => `<option value="${escapeHtml(loc)}">${escapeHtml(loc)}</option>`).join("");
+    locationSelect.value = locations.includes(oldValue) ? oldValue : "ALL";
+  }
 }
 
 async function loadMonthlyTimesheet(){
@@ -1144,7 +1274,7 @@ async function loadMonthlyTimesheet(){
   const toDate = monthlyIso(year,month,monthDays(year,month));
 
   document.getElementById("monthlyTimesheetContent").innerHTML =
-    `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading monthly timesheet...</div></div>`;
+    `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading timesheet from Google Attendance...</div></div>`;
 
   try{
     const data = await apiPost({
@@ -1182,8 +1312,8 @@ function monthlyOTChange(workerId,value){
   if(!current || current.submitted) return;
 
   const info = STATUS_INFO[current.workStatus] || STATUS_INFO.P;
-
   let v = Number(value);
+
   if(!Number.isFinite(v)) v = 0;
   v = Math.max(0,Math.min(8,v));
   v = Math.round(v*2)/2;
@@ -1224,54 +1354,65 @@ function monthlyCorrection(workerId,date){
   document.getElementById("correctionModal").classList.remove("hidden");
 }
 
+function workerHasMissingAttendance(person,year,month,recMap,today){
+  const days = monthDays(year,month);
+
+  for(let d=1;d<=days;d++){
+    const dateStr = monthlyIso(year,month,d);
+    if(dateStr >= today) continue;
+    if(!recMap.has(`${person.workerId}|${dateStr}`)) return true;
+  }
+
+  return false;
+}
+
 function renderMonthlyTimesheet(){
   const content = document.getElementById("monthlyTimesheetContent");
   const monthInput = document.getElementById("monthlyMonth");
+  const locationFilter = document.getElementById("monthlyLocation")?.value || "ALL";
+  const viewMode = document.getElementById("monthlyViewMode")?.value || "ALL";
+
   const {year,month} = parseMonthValue(monthInput.value);
   const days = monthDays(year,month);
   const today = getTodayISO();
   const selectedIsCurrentMonth = monthInput.value === today.slice(0,7);
-  const todayDay = Number(today.slice(8,10));
   const recMap = monthlyRecordMap();
 
-  if(!monthlyRoster.length){
-    content.innerHTML = `<div class="empty">No workers or attendance found for this month.</div>`;
-    document.getElementById("monthWorkers").textContent = "0";
-    document.getElementById("monthPresent").textContent = "0";
-    document.getElementById("monthMissing").textContent = "0";
-    document.getElementById("monthOT").textContent = "0";
+  const monthName = new Date(year,month-1,1).toLocaleDateString("en-US",{month:"long"});
+  document.getElementById("timesheetMonthTitle").textContent =
+    `MANPOWER TIMESHEET FOR THE MONTH OF ${monthName.toUpperCase()} ${year}`;
+
+  let roster = [...monthlyRoster];
+
+  if(locationFilter !== "ALL"){
+    roster = roster.filter(w => String(w.location || "") === locationFilter);
+  }
+
+  if(viewMode === "MISSING"){
+    roster = roster.filter(w => workerHasMissingAttendance(w,year,month,recMap,today));
+  }
+
+  if(!roster.length){
+    content.innerHTML = `<div class="empty">No employees match the selected filter.</div>`;
+    document.getElementById("monthlySummaryLine").textContent =
+      `${currentSupervisor.supervisorName || currentSupervisor.supervisorId} • 0 employees`;
     return;
   }
 
-  let missingCount = 0;
-  let monthOT = 0;
+  let totalMissing = 0;
+  let totalMonthOT = 0;
 
-  monthlyRecords.forEach(r => monthOT += Number(r.otHours || 0));
+  monthlyRecords.forEach(r => totalMonthOT += Number(r.otHours || 0));
 
-  const currentTodayPresent = workers.filter(w => {
-    const rec = recMap.get(`${w.workerId}|${today}`);
-    return rec ? rec.workStatus === "P" : w.workStatus === "P";
-  }).length;
-
-  const dayHeaders = Array.from({length:days},(_,i) => {
-    const d = i+1;
-    const date = new Date(year,month-1,d);
-    const dow = date.toLocaleDateString("en-US",{weekday:"short"});
-    const sun = dow === "Sun" ? " sun" : "";
-    return `<th class="${sun}">${d}<div class="dow">${dow}</div></th>`;
-  }).join("");
-
-  const totalHeaders = ["P","AL","SL","A","OFF","PH","BD","TOTAL","OT"];
-
-  let rowsHtml = "";
-
-  monthlyRoster.forEach((person,index) => {
+  const blocks = roster.map((person,index) => {
     const counts = {P:0,AL:0,SL:0,A:0,OFF:0,PH:0,BD:0};
     let workerMonthOT = 0;
+    let dayCells = "";
+    let dowCells = "";
     let workCells = "";
     let otCells = "";
 
-    for(let d=1; d<=days; d++){
+    for(let d=1;d<=days;d++){
       const dateStr = monthlyIso(year,month,d);
       const dateObj = new Date(year,month-1,d);
       const dow = dateObj.toLocaleDateString("en-US",{weekday:"short"});
@@ -1281,19 +1422,21 @@ function renderMonthlyTimesheet(){
       const rec = recMap.get(`${person.workerId}|${dateStr}`);
       const currentWorker = workers.find(w => String(w.workerId) === String(person.workerId));
 
+      dayCells += `<th class="ts-day ${isSun ? "sun" : ""}">${d}</th>`;
+      dowCells += `<td class="ts-dow ${isSun ? "sun" : ""}">${dow}</td>`;
+
       if(rec){
         if(counts[rec.workStatus] !== undefined) counts[rec.workStatus]++;
         workerMonthOT += Number(rec.otHours || 0);
 
-        const correction = String(rec.correctionStatus || "").toLowerCase();
-        const correctionText = correction === "pending" ? " ⏳" : "";
+        const pending = String(rec.correctionStatus || "").toLowerCase() === "pending";
 
         workCells += `
           <td
             class="locked-cell ${isSun ? "sun" : ""} ${isToday ? "today-cell" : ""}"
-            title="Submitted. Tap to request correction."
+            title="Submitted. Click to request correction."
             onclick="monthlyCorrection('${escapeHtml(String(person.workerId))}','${dateStr}')"
-          >${escapeHtml(rec.workStatus)}${correctionText}</td>
+          >${escapeHtml(rec.workStatus)}${pending ? " ⏳" : ""}</td>
         `;
 
         otCells += `
@@ -1307,7 +1450,7 @@ function renderMonthlyTimesheet(){
         workCells += `
           <td class="${isSun ? "sun" : ""} today-cell">
             <select onchange="monthlyStatusSelect('${escapeHtml(String(person.workerId))}',this.value)">
-              ${Object.entries(STATUS_INFO).map(([code,meta]) =>
+              ${Object.keys(STATUS_INFO).map(code =>
                 `<option value="${code}" ${currentWorker.workStatus===code ? "selected" : ""}>${code}</option>`
               ).join("")}
             </select>
@@ -1329,67 +1472,84 @@ function renderMonthlyTimesheet(){
         workCells += `<td class="future ${isSun ? "sun" : ""}"></td>`;
         otCells += `<td class="future ${isSun ? "sun" : ""}"></td>`;
       }else{
-        // Past date with no attendance record.
-        missingCount++;
-        workCells += `<td class="missing ${isSun ? "sun" : ""}" title="Attendance not submitted">!</td>`;
+        totalMissing++;
+        workCells += `<td class="missing ${isSun ? "sun" : ""}" title="Missing attendance">!</td>`;
         otCells += `<td class="missing ${isSun ? "sun" : ""}"></td>`;
       }
     }
 
-    const totalVals = [
-      counts.P,counts.AL,counts.SL,counts.A,counts.OFF,counts.PH,counts.BD,
-      counts.P+counts.AL+counts.SL+counts.A+counts.OFF+counts.PH+counts.BD,
-      formatNumber(workerMonthOT)
-    ];
+    const totalCount =
+      counts.P+counts.AL+counts.SL+counts.A+counts.OFF+counts.PH+counts.BD;
 
-    rowsHtml += `
-      <tr>
-        <td class="emp" rowspan="2">
-          ${index+1}. ${escapeHtml(person.workerName || "")}
-          <span class="meta">${escapeHtml(person.workerId || "")} • ${escapeHtml(person.designation || "")}</span>
-          <span class="meta">${escapeHtml(person.location || "")}</span>
-        </td>
-        <td class="row-label">WORK</td>
-        ${workCells}
-        ${totalVals.map((v,i) =>
-          `<td class="total-val ${i===8 ? "ot-total" : ""}" rowspan="${i===8 ? 2 : 1}">${v}</td>`
-        ).join("")}
-      </tr>
-      <tr>
-        <td class="row-label">OT</td>
-        ${otCells}
-        ${totalVals.slice(0,8).map(() => `<td class="total-val"></td>`).join("")}
-      </tr>
+    const totalWorkCells = [
+      counts.P,counts.AL,counts.SL,counts.A,counts.OFF,counts.PH,counts.BD,totalCount
+    ].map(v => `<td style="font-weight:900">${v}</td>`).join("");
+
+    const totalBlankCells = Array.from({length:8},() => `<td></td>`).join("");
+
+    return `
+      <div class="ts-employee-block">
+        <div class="ts-employee-head">
+          <div class="ts-seq">${index+1}.</div>
+          <div class="ts-fieldbox">${escapeHtml(person.workerName || "")}</div>
+          <div class="ts-fieldbox">${escapeHtml(person.designation || "")}</div>
+          <div class="ts-fieldbox">${escapeHtml(person.workerId || "")}</div>
+          <div class="ts-fieldbox">📍 ${escapeHtml(person.location || "")}</div>
+          <div class="ts-verified">✓ Verified</div>
+        </div>
+
+        <table class="ts-grid">
+          <tr>
+            <th class="ts-row-label">DAY</th>
+            ${dayCells}
+            <th class="ts-total-head">P</th>
+            <th class="ts-total-head">AL</th>
+            <th class="ts-total-head">SL</th>
+            <th class="ts-total-head">A</th>
+            <th class="ts-total-head">OFF</th>
+            <th class="ts-total-head">PH</th>
+            <th class="ts-total-head">BD</th>
+            <th class="ts-total-head ts-total-wide">TOTAL</th>
+          </tr>
+
+          <tr>
+            <td></td>
+            ${dowCells}
+            ${Array.from({length:8},() => `<td></td>`).join("")}
+          </tr>
+
+          <tr>
+            <td class="ts-row-label">WORK</td>
+            ${workCells}
+            ${totalWorkCells}
+          </tr>
+
+          <tr>
+            <td class="ts-row-label">OT</td>
+            ${otCells}
+            <td colspan="8" class="ot-total-text">TOTAL OT Hours: ${formatNumber(workerMonthOT)}</td>
+          </tr>
+        </table>
+      </div>
     `;
-  });
+  }).join("");
 
-  content.innerHTML = `
-    <table class="monthly-sheet">
-      <thead>
-        <tr>
-          <th class="emp">Employee</th>
-          <th class="row-label">DAY</th>
-          ${dayHeaders}
-          ${totalHeaders.map(h => `<th class="total-head">${h}</th>`).join("")}
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-  `;
+  content.innerHTML = blocks;
 
-  document.getElementById("monthWorkers").textContent = monthlyRoster.length;
-  document.getElementById("monthPresent").textContent = currentTodayPresent;
-  document.getElementById("monthMissing").textContent = missingCount;
-  document.getElementById("monthOT").textContent = formatNumber(monthOT);
+  const todayRecords = monthlyRecords.filter(r => r.date === today);
+  const todayP = todayRecords.filter(r => r.workStatus === "P").length;
+
+  document.getElementById("monthlySummaryLine").textContent =
+    `${currentSupervisor.supervisorName || currentSupervisor.supervisorId} • ${roster.length} employees • Today P: ${todayP} • Missing past cells: ${totalMissing} • Month OT: ${formatNumber(totalMonthOT)}`;
 
   const notice = document.getElementById("monthlyStatusNotice");
 
   if(monthInput.value > today.slice(0,7)){
-    notice.innerHTML = `<div class="notice warn">Future month: view only.</div>`;
+    notice.innerHTML = `<div class="notice warn">Future month — view only.</div>`;
   }else if(monthInput.value < today.slice(0,7)){
-    notice.innerHTML = `<div class="notice ok">Previous month: submitted records are read-only. Tap a WORK cell for correction request.</div>`;
+    notice.innerHTML = `<div class="notice ok">Previous month — submitted records are locked. Click a WORK cell for correction.</div>`;
   }else{
-    notice.innerHTML = `<div class="notice ok">Today's column is editable until submitted. Previous submitted days are locked.</div>`;
+    notice.innerHTML = `<div class="notice ok">Current month — today is editable until you submit attendance.</div>`;
   }
 }
 
@@ -1397,7 +1557,7 @@ async function submitMonthlyToday(){
   const monthInput = document.getElementById("monthlyMonth");
 
   if(monthInput.value !== getTodayISO().slice(0,7)){
-    return alert("Open the current month to submit today's attendance.");
+    return alert("Please open the current month to submit today's attendance.");
   }
 
   await submitAttendance();
@@ -1955,6 +2115,7 @@ function populateTransferSupervisors(){
 
   select.innerHTML = `<option value="">Select Supervisor</option>` +
     supervisors
+      .filter(s => s && s.supervisorId)
       .filter(s => String(s.supervisorId) !== String(currentId))
       .map(s =>
         `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
