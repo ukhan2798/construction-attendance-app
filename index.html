@@ -241,6 +241,8 @@
     .ts-grid .sun{background:#ecff00!important;color:#078313;font-weight:900}
     .ts-grid .future{background:#f1f3f4;color:#a0a7b0}
     .ts-grid .missing{background:#fff1cf;color:#b15b00;font-weight:900}
+    .ts-grid .employment-nj{background:#e8eef7;color:#475569;font-weight:900}
+    .ts-grid .employment-rel{background:#e5e7eb;color:#6b7280;font-weight:900}
     .ts-grid .locked-cell{background:#fff;font-weight:900;cursor:pointer}
     .ts-grid .today-cell{
       box-shadow:inset 0 0 0 2px #0b57d0;background:#eef5ff
@@ -485,7 +487,7 @@
 
           <div class="monthly-note">
             Today’s WORK and OT cells are editable until submitted. Previous submitted days are locked.
-            A missing past date is highlighted. Tap a submitted WORK cell to request a correction.
+            Past dates outside the employee period show NJ/REL, not missing. Tap a submitted WORK cell to request a correction.
           </div>
         </div>
       </section>
@@ -809,6 +811,7 @@ let workers = [];
 let equipmentAssignments = [];
 let todayAttendance = [];
 let monthlyRecords = [];
+let monthlyWorkers = [];
 let monthlyRoster = [];
 let currentSupervisor = null;
 let correctionTarget = null;
@@ -1583,22 +1586,28 @@ function monthlyRecordMap(){
 function buildMonthlyRoster(){
   const map = new Map();
 
-  (workers || []).forEach(w => {
+  (monthlyWorkers || []).forEach(w => {
     map.set(String(w.workerId),{
       workerId:w.workerId,
       workerName:w.workerName,
       designation:w.designation || "",
-      location:w.location || ""
+      location:w.location || "",
+      joiningDate:w.joiningDate || "",
+      lastWorkingDate:w.lastWorkingDate || ""
     });
   });
 
+  // Keep historical attendance visible even if a worker record
+  // is no longer returned for the selected month.
   (monthlyRecords || []).forEach(r => {
     if(!map.has(String(r.workerId))){
       map.set(String(r.workerId),{
         workerId:r.workerId,
         workerName:r.workerName,
         designation:r.designation || "",
-        location:r.location || ""
+        location:r.location || "",
+        joiningDate:"",
+        lastWorkingDate:""
       });
     }
   });
@@ -1617,7 +1626,6 @@ function buildMonthlyRoster(){
     locationSelect.value = locations.includes(oldValue) ? oldValue : "ALL";
   }
 }
-
 async function loadMonthlyTimesheet(){
   if(!currentSupervisor) return;
 
@@ -1637,14 +1645,29 @@ async function loadMonthlyTimesheet(){
     `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading timesheet from Google Attendance...</div></div>`;
 
   try{
-    const data = await apiPost({
-      action:"getAttendanceRange",
-      supervisorId:currentSupervisor.supervisorId,
-      fromDate,
-      toDate
-    });
+    const [attendanceData, workersData] = await Promise.all([
+      apiPost({
+        action:"getAttendanceRange",
+        supervisorId:currentSupervisor.supervisorId,
+        fromDate,
+        toDate
+      }),
+      apiPost({
+        action:"getAllWorkers",
+        fromDate,
+        toDate
+      })
+    ]);
 
-    monthlyRecords = data.records || [];
+    monthlyRecords = attendanceData.records || [];
+
+    // Month roster is still limited to this supervisor.
+    // getAllWorkers is used so Joining / Last Working dates are available
+    // even for released staff who should remain visible historically.
+    monthlyWorkers = (workersData.workers || []).filter(w =>
+      String(w.supervisorId || "") === String(currentSupervisor.supervisorId || "")
+    );
+
     buildMonthlyRoster();
     renderMonthlyTimesheet();
   }catch(err){
@@ -1652,7 +1675,6 @@ async function loadMonthlyTimesheet(){
       `<div class="notice err">${escapeHtml(err.message)}</div>`;
   }
 }
-
 function monthlyStatusSelect(workerId,value){
   const current = workers.find(w => String(w.workerId) === String(workerId));
   if(!current || current.submitted) return;
@@ -1720,12 +1742,17 @@ function workerHasMissingAttendance(person,year,month,recMap,today){
   for(let d=1;d<=days;d++){
     const dateStr = monthlyIso(year,month,d);
     if(dateStr >= today) continue;
+
+    // Days before Joining Date and after Last Working Date
+    // are valid employment-period days, not missing attendance.
+    if(person.joiningDate && dateStr < person.joiningDate) continue;
+    if(person.lastWorkingDate && dateStr > person.lastWorkingDate) continue;
+
     if(!recMap.has(`${person.workerId}|${dateStr}`)) return true;
   }
 
   return false;
 }
-
 function renderMonthlyTimesheet(){
   const content = document.getElementById("monthlyTimesheetContent");
   const monthInput = document.getElementById("monthlyMonth");
@@ -1785,7 +1812,19 @@ function renderMonthlyTimesheet(){
       dayCells += `<th class="ts-day ${isSun ? "sun" : ""}">${d}</th>`;
       dowCells += `<td class="ts-dow ${isSun ? "sun" : ""}">${dow}</td>`;
 
-      if(rec){
+      const beforeJoining =
+        !!person.joiningDate && dateStr < person.joiningDate;
+
+      const afterLastWorking =
+        !!person.lastWorkingDate && dateStr > person.lastWorkingDate;
+
+      if(beforeJoining){
+        workCells += `<td class="employment-nj ${isSun ? "sun" : ""}" title="Not joined yet">NJ</td>`;
+        otCells += `<td class="employment-nj ${isSun ? "sun" : ""}"></td>`;
+      }else if(afterLastWorking){
+        workCells += `<td class="employment-rel ${isSun ? "sun" : ""}" title="After last working date">REL</td>`;
+        otCells += `<td class="employment-rel ${isSun ? "sun" : ""}"></td>`;
+      }else if(rec){
         if(counts[rec.workStatus] !== undefined) counts[rec.workStatus]++;
         workerMonthOT += Number(rec.otHours || 0);
 
