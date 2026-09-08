@@ -340,7 +340,40 @@
       .cm-detail-actions{grid-template-columns:1fr}
     }
 
+  
+    .daily-toolbar{
+      display:grid;grid-template-columns:auto minmax(150px,1fr) auto;
+      gap:8px;align-items:end;margin:12px 0
+    }
+    .daily-toolbar .field{margin:0}
+    .date-nav-btn{min-width:46px}
+    .daily-badge{
+      display:inline-flex;align-items:center;gap:5px;border-radius:999px;
+      padding:4px 9px;font-size:11px;font-weight:900;margin-top:5px
+    }
+    .daily-badge.today{background:#dcfce7;color:#166534}
+    .daily-badge.backdate{background:#fff4ce;color:#7a4c00}
+    .quick-tools{
+      display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 12px
+    }
+    .quick-tools .btn{min-height:36px;padding:8px 11px;font-size:12px}
+    .report-tools{
+      display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px
+    }
+    .draft-chip{
+      font-size:11px;color:#475569;font-weight:800;display:inline-flex;
+      align-items:center;gap:5px
+    }
+    @media(max-width:640px){
+      .daily-toolbar{grid-template-columns:46px 1fr 46px}
+      .report-tools{grid-template-columns:1fr 1fr}
+    }
+
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+
 </head>
 <body>
 <div class="app">
@@ -401,10 +434,26 @@
         <div class="card">
           <div class="section-title">
             <div>
-              <h2 style="margin-bottom:3px">Today's Attendance</h2>
+              <h2 style="margin-bottom:3px">Daily Attendance</h2>
               <div class="small muted" id="todayLabel"></div>
+              <span id="attendanceDateBadge" class="daily-badge today">Today</span>
             </div>
             <button class="btn btn-soft" onclick="refreshToday()">↻ Refresh</button>
+          </div>
+
+          <div class="daily-toolbar">
+            <button class="btn btn-soft date-nav-btn" type="button" onclick="changeAttendanceDate(-1)" title="Previous day">‹</button>
+            <div class="field">
+              <label>Attendance Date</label>
+              <input id="attendanceDate" type="date" onchange="onAttendanceDateChanged(this.value)">
+            </div>
+            <button class="btn btn-soft date-nav-btn" id="nextAttendanceDateBtn" type="button" onclick="changeAttendanceDate(1)" title="Next day">›</button>
+          </div>
+
+          <div class="quick-tools">
+            <button class="btn btn-soft" type="button" onclick="fillAllPresent()">✓ All Present</button>
+            <button class="btn btn-soft" type="button" onclick="clearAllOT()">OT = 0</button>
+            <span id="draftStatus" class="draft-chip">Draft ready</span>
           </div>
 
           <div class="summary-grid">
@@ -424,8 +473,12 @@
 
         <div class="actions">
           <button class="btn btn-primary full" id="submitBtn" onclick="submitAttendance()">
-            Submit Today's Attendance
+            Submit Attendance
           </button>
+          <div class="report-tools">
+            <button class="btn btn-soft full" type="button" onclick="viewDailyPdf()">📄 View PDF</button>
+            <button class="btn btn-soft full" type="button" onclick="shareDailyPdf()">↗ Share PDF</button>
+          </div>
         </div>
       </section>
 
@@ -813,6 +866,7 @@ let supervisors = [];
 let workers = [];
 let equipmentAssignments = [];
 let todayAttendance = [];
+let selectedAttendanceDate = getTodayISO();
 let monthlyRecords = [];
 let monthlyWorkers = [];
 let monthlyRoster = [];
@@ -831,6 +885,12 @@ window.addEventListener("offline", updateOnlineStatus);
 
 async function init(){
   updateOnlineStatus();
+  selectedAttendanceDate = getTodayISO();
+  const attendanceDateInput = document.getElementById("attendanceDate");
+  if(attendanceDateInput){
+    attendanceDateInput.value = selectedAttendanceDate;
+    attendanceDateInput.max = getTodayISO();
+  }
   setTodayLabel();
   setupMonthYearSelectors();
   updateQueueChip();
@@ -882,13 +942,25 @@ function getTodayISO(){
 }
 
 function setTodayLabel(){
-  const d = new Date();
+  const dateStr = selectedAttendanceDate || getTodayISO();
+  const d = new Date(dateStr + "T00:00:00");
   document.getElementById("todayLabel").textContent =
     d.toLocaleDateString(undefined,{
       weekday:"long", year:"numeric", month:"long", day:"numeric"
     });
-}
 
+  const badge = document.getElementById("attendanceDateBadge");
+  if(badge){
+    const isToday = dateStr === getTodayISO();
+    badge.textContent = isToday ? "Today" : "Backdated";
+    badge.className = "daily-badge " + (isToday ? "today" : "backdate");
+  }
+
+  const nextBtn = document.getElementById("nextAttendanceDateBtn");
+  if(nextBtn){
+    nextBtn.disabled = dateStr >= getTodayISO();
+  }
+}
 function updateOnlineStatus(){
   const online = navigator.onLine;
   document.getElementById("onlineDot").className = "dot " + (online ? "online" : "offline");
@@ -1278,15 +1350,19 @@ async function loadCrewAndToday(){
     if(!currentSupervisor || !currentSupervisor.supervisorId){
       throw new Error("Supervisor session expired. Please log out and log in again.");
     }
+
+    const dateStr = selectedAttendanceDate || getTodayISO();
+
     const [crewData, attendanceData, equipmentData] = await Promise.all([
       apiPost({
         action:"getWorkers",
-        supervisorId:currentSupervisor.supervisorId
+        supervisorId:currentSupervisor.supervisorId,
+        date:dateStr
       }),
       apiPost({
         action:"getTodayAttendance",
         supervisorId:currentSupervisor.supervisorId,
-        date:getTodayISO()
+        date:dateStr
       }),
       apiPost({
         action:"getEquipmentAssignments",
@@ -1299,6 +1375,7 @@ async function loadCrewAndToday(){
     equipmentAssignments = equipmentData.assignments || [];
 
     mergeTodayState();
+    restoreDailyDraft();
     renderWorkers();
     populateTransferWorkers();
     populateTransferSupervisors();
@@ -1311,7 +1388,117 @@ async function loadCrewAndToday(){
 async function refreshToday(){
   await syncOfflineQueue();
   await loadCrewAndToday();
-  showGlobal("Attendance refreshed from Google Sheets.","ok");
+  showGlobal(`Attendance refreshed for ${selectedAttendanceDate}.`,"ok");
+}
+
+function onAttendanceDateChanged(value){
+  if(!value) return;
+
+  const today = getTodayISO();
+  if(value > today){
+    alert("Future attendance cannot be entered.");
+    document.getElementById("attendanceDate").value = selectedAttendanceDate;
+    return;
+  }
+
+  selectedAttendanceDate = value;
+  document.getElementById("attendanceDate").value = selectedAttendanceDate;
+  setTodayLabel();
+  loadCrewAndToday();
+}
+
+function changeAttendanceDate(delta){
+  const base = new Date((selectedAttendanceDate || getTodayISO()) + "T00:00:00");
+  base.setDate(base.getDate() + Number(delta || 0));
+
+  const y = base.getFullYear();
+  const m = String(base.getMonth()+1).padStart(2,"0");
+  const d = String(base.getDate()).padStart(2,"0");
+  const next = `${y}-${m}-${d}`;
+
+  if(next > getTodayISO()) return;
+
+  selectedAttendanceDate = next;
+  document.getElementById("attendanceDate").value = next;
+  setTodayLabel();
+  loadCrewAndToday();
+}
+
+function dailyDraftKey(){
+  if(!currentSupervisor) return "";
+  return `attendance_draft_${currentSupervisor.supervisorId}_${selectedAttendanceDate}`;
+}
+
+function saveDailyDraft(){
+  const key = dailyDraftKey();
+  if(!key) return;
+
+  const draft = workers
+    .filter(w => !w.submitted)
+    .map(w => ({
+      workerId:w.workerId,
+      workStatus:w.workStatus,
+      otHours:Number(w.otHours || 0)
+    }));
+
+  localStorage.setItem(key, JSON.stringify(draft));
+  const chip = document.getElementById("draftStatus");
+  if(chip) chip.textContent = "✓ Draft saved";
+}
+
+function restoreDailyDraft(){
+  const key = dailyDraftKey();
+  if(!key) return;
+
+  let draft = [];
+  try{
+    draft = JSON.parse(localStorage.getItem(key) || "[]");
+  }catch{}
+
+  if(!Array.isArray(draft) || !draft.length) return;
+
+  const map = new Map(draft.map(x => [String(x.workerId),x]));
+
+  workers.forEach(w => {
+    if(w.submitted) return;
+    const saved = map.get(String(w.workerId));
+    if(!saved) return;
+
+    if(STATUS_INFO[saved.workStatus]){
+      w.workStatus = saved.workStatus;
+      w.normalHours = STATUS_INFO[saved.workStatus].normal;
+      w.otHours = STATUS_INFO[saved.workStatus].ot
+        ? Math.max(0,Math.min(8,Number(saved.otHours || 0)))
+        : 0;
+      w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
+    }
+  });
+}
+
+function clearDailyDraft(){
+  const key = dailyDraftKey();
+  if(key) localStorage.removeItem(key);
+}
+
+function fillAllPresent(){
+  workers.forEach(w => {
+    if(w.submitted) return;
+    w.workStatus = "P";
+    w.normalHours = 8;
+    w.totalHours = 8 + Number(w.otHours || 0);
+  });
+  saveDailyDraft();
+  renderWorkers();
+}
+
+function clearAllOT(){
+  workers.forEach(w => {
+    if(w.submitted) return;
+    w.otHours = 0;
+    w.totalHours = Number(w.normalHours || 0);
+  });
+  saveDailyDraft();
+  renderWorkers();
 }
 
 function mergeTodayState(){
@@ -1335,7 +1522,9 @@ function mergeTodayState(){
       };
     }
 
-    const isSunday = new Date(getTodayISO() + "T00:00:00").getDay() === 0;
+    const isSunday =
+      new Date((selectedAttendanceDate || getTodayISO()) + "T00:00:00").getDay() === 0;
+
     const defaultStatus = isSunday ? "OFF" : "P";
     const defaultNormalHours = isSunday ? 0 : 8;
 
@@ -1350,7 +1539,6 @@ function mergeTodayState(){
     };
   });
 }
-
 function setWorkerLoading(){
   document.getElementById("workerList").innerHTML =
     `<div class="empty"><div class="loader"></div><div style="margin-top:10px">Loading workers...</div></div>`;
@@ -1456,6 +1644,7 @@ function changeStatus(index,status){
   }
 
   w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
+  saveDailyDraft();
   renderWorkers();
 }
 
@@ -1475,6 +1664,7 @@ function setOT(index,value){
   }
 
   w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
+  saveDailyDraft();
   renderWorkers();
 }
 
@@ -1495,27 +1685,36 @@ function updateSummary(){
 function updateSubmitButton(){
   const btn = document.getElementById("submitBtn");
   const pending = workers.filter(w => !w.submitted);
+  const isToday = selectedAttendanceDate === getTodayISO();
 
   if(!workers.length){
     btn.disabled = true;
     btn.textContent = "No Workers to Submit";
   }else if(!pending.length){
     btn.disabled = true;
-    btn.textContent = "Today's Attendance Already Submitted";
+    btn.textContent = `${selectedAttendanceDate} Already Submitted`;
   }else{
     btn.disabled = false;
-    btn.textContent = `Submit Attendance (${pending.length})`;
+    btn.textContent =
+      isToday
+        ? `Submit Today (${pending.length})`
+        : `Submit Backdated Attendance (${pending.length})`;
   }
 }
-
 async function submitAttendance(){
   const pending = workers.filter(w => !w.submitted);
+  const dateStr = selectedAttendanceDate || getTodayISO();
 
   if(!pending.length){
-    return showGlobal("All current workers are already submitted for today.","warn");
+    return showGlobal(`All workers are already submitted for ${dateStr}.`,"warn");
   }
 
-  if(!confirm(`Submit today's attendance for ${pending.length} worker(s)? After submission, corrections must be requested.`)){
+  const isBackdated = dateStr < getTodayISO();
+  const confirmText = isBackdated
+    ? `Submit BACKDATED attendance for ${dateStr} for ${pending.length} worker(s)? After submission, corrections must be requested.`
+    : `Submit today's attendance for ${pending.length} worker(s)? After submission, corrections must be requested.`;
+
+  if(!confirm(confirmText)){
     return;
   }
 
@@ -1524,7 +1723,7 @@ async function submitAttendance(){
   btn.textContent = "Submitting...";
 
   const records = pending.map(w => ({
-    date:getTodayISO(),
+    date:dateStr,
     workerId:w.workerId,
     workerName:w.workerName,
     designation:w.designation || "",
@@ -1547,9 +1746,16 @@ async function submitAttendance(){
         const w = workers.find(x => String(x.workerId) === String(r.workerId));
         if(w) w.submitted = true;
       });
+      clearDailyDraft();
       renderWorkers();
     }else{
-      showGlobal("Attendance submitted successfully.","ok");
+      clearDailyDraft();
+      showGlobal(
+        isBackdated
+          ? `Backdated attendance for ${dateStr} submitted and sent for CM approval.`
+          : "Attendance submitted successfully and sent for CM approval.",
+        "ok"
+      );
       await loadCrewAndToday();
       if(!document.getElementById("viewMonthly").classList.contains("hidden")){
         await loadMonthlyTimesheet();
@@ -1560,6 +1766,128 @@ async function submitAttendance(){
     updateSubmitButton();
   }
 }
+
+/* =========================================================
+   DAILY PDF REPORT / SHARE
+========================================================= */
+
+function dailyReportRows(){
+  return workers.map((w,i) => [
+    String(i+1),
+    String(w.workerId || ""),
+    String(w.workerName || ""),
+    String(w.designation || ""),
+    String(w.workStatus || ""),
+    String(Number(w.normalHours || 0)),
+    String(Number(w.otHours || 0)),
+    String(Number(w.totalHours || 0)),
+    String(w.location || "")
+  ]);
+}
+
+function dailyReportFileName(){
+  const sup = (currentSupervisor?.supervisorId || "SUP").replace(/[^a-z0-9_-]/gi,"_");
+  return `Attendance_${sup}_${selectedAttendanceDate || getTodayISO()}.pdf`;
+}
+
+async function makeDailyPdfBlob(){
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    throw new Error("PDF library is still loading. Please try again in a few seconds.");
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  const dateStr = selectedAttendanceDate || getTodayISO();
+
+  doc.setFontSize(16);
+  doc.text("DMT SEA PALACE PROJECT - DAILY ATTENDANCE REPORT", 14, 14);
+
+  doc.setFontSize(9.5);
+  doc.text(`Date: ${dateStr}`, 14, 21);
+  doc.text(
+    `Supervisor: ${currentSupervisor?.supervisorName || ""} (${currentSupervisor?.supervisorId || ""})`,
+    14, 27
+  );
+
+  const totalNormal = workers.reduce((s,w)=>s+Number(w.normalHours || 0),0);
+  const totalOT = workers.reduce((s,w)=>s+Number(w.otHours || 0),0);
+  const totalHours = workers.reduce((s,w)=>s+Number(w.totalHours || 0),0);
+
+  doc.text(
+    `Workers: ${workers.length}   Present: ${workers.filter(w=>w.workStatus==="P").length}   Absent: ${workers.filter(w=>w.workStatus==="A").length}   Normal Hrs: ${formatNumber(totalNormal)}   OT Hrs: ${formatNumber(totalOT)}   Total Hrs: ${formatNumber(totalHours)}`,
+    14, 33
+  );
+
+  if(typeof doc.autoTable === "function"){
+    doc.autoTable({
+      startY:38,
+      head:[["#","Worker ID","Worker Name","Designation","Status","Normal","OT","Total","Location"]],
+      body:dailyReportRows(),
+      styles:{fontSize:7.5,cellPadding:2},
+      headStyles:{fontStyle:"bold"},
+      columnStyles:{
+        0:{cellWidth:8},
+        1:{cellWidth:23},
+        2:{cellWidth:48},
+        3:{cellWidth:35},
+        4:{cellWidth:17},
+        5:{cellWidth:16},
+        6:{cellWidth:14},
+        7:{cellWidth:16},
+        8:{cellWidth:36}
+      }
+    });
+  }
+
+  const y = Math.min((doc.lastAutoTable?.finalY || 45) + 16, 185);
+  doc.setFontSize(9);
+  doc.text("Supervisor Signature: __________________________", 14, y);
+  doc.text("Construction Manager Approval: __________________________", 110, y);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 14, y+8);
+
+  return doc.output("blob");
+}
+
+async function viewDailyPdf(){
+  try{
+    const blob = await makeDailyPdfBlob();
+    const url = URL.createObjectURL(blob);
+    window.open(url,"_blank");
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+async function shareDailyPdf(){
+  try{
+    const blob = await makeDailyPdfBlob();
+    const file = new File([blob],dailyReportFileName(),{type:"application/pdf"});
+
+    if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      await navigator.share({
+        title:"Daily Attendance Report",
+        text:`${currentSupervisor?.supervisorName || "Supervisor"} - ${selectedAttendanceDate}`,
+        files:[file]
+      });
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = dailyReportFileName();
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    alert("PDF was downloaded because direct file sharing is not supported by this browser.");
+  }catch(err){
+    if(err && err.name === "AbortError") return;
+    alert(err.message || String(err));
+  }
+}
+
 
 /* =========================================================
    MONTHLY TIMESHEET
@@ -1975,9 +2303,9 @@ function openCorrectionModal(index){
   const w = workers[index];
   if(!w || !w.submitted) return;
 
-  correctionTarget = {...w,date:getTodayISO()};
+  correctionTarget = {...w,date:(selectedAttendanceDate || getTodayISO())};
   document.getElementById("correctionWorkerText").textContent =
-    `${w.workerName} (${w.workerId}) • ${getTodayISO()} • Current: ${w.workStatus} • OT: ${w.otHours}`;
+    `${w.workerName} (${w.workerId}) • ${selectedAttendanceDate || getTodayISO()} • Current: ${w.workStatus} • OT: ${w.otHours}`;
 
   document.getElementById("correctionStatus").value = w.workStatus;
   document.getElementById("correctionOT").value = Number(w.otHours || 0);
