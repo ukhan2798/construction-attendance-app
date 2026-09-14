@@ -1091,7 +1091,11 @@ async function init(){
 
       await loadSupervisors();
 
-      if(isCMUser()){
+      if(isAdminUser()){
+        adminPin = sessionStorage.getItem("attendance_admin_pin") || "1334";
+        showAdminApp();
+        await adminLoadDashboard();
+      }else if(isCMUser()){
         showCMApp();
         await loadCMApprovals();
       }else{
@@ -1105,6 +1109,7 @@ async function init(){
 
       document.getElementById("mainApp").classList.add("hidden");
       document.getElementById("cmApp").classList.add("hidden");
+      document.getElementById("adminApp").classList.add("hidden");
       document.getElementById("appHeader").classList.add("hidden");
       document.getElementById("bottomNav").classList.add("hidden");
       document.getElementById("loginView").classList.remove("hidden");
@@ -1251,7 +1256,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v29";
+const CACHE_VERSION = "v30";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
