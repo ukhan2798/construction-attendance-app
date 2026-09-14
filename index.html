@@ -451,6 +451,207 @@
       .admin-tabs{display:grid;grid-template-columns:1fr 1fr}
     }
 
+
+    /* ===== ADMIN UI v31 ===== */
+    #adminApp{
+      max-width:1280px;
+      margin:0 auto;
+      padding-bottom:30px;
+    }
+    #adminApp > .card{
+      padding:0;
+      overflow:hidden;
+      border-radius:18px;
+      border:1px solid #dbe5f2;
+      box-shadow:0 16px 40px rgba(31,65,114,.10);
+    }
+    .admin-hero{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+      padding:20px 22px;
+      background:linear-gradient(135deg,#0b57d0,#174ea6);
+      color:#fff;
+    }
+    .admin-hero h2{font-size:22px;margin:0 0 4px}
+    .admin-hero .muted{color:rgba(255,255,255,.82)}
+    .admin-hero-badge{
+      display:inline-flex;align-items:center;gap:7px;
+      padding:6px 10px;border-radius:999px;
+      background:rgba(255,255,255,.14);
+      font-size:11px;font-weight:900;margin-top:8px
+    }
+    .admin-hero-actions{display:flex;gap:8px;align-items:center}
+    .admin-hero .btn{border:1px solid rgba(255,255,255,.28)}
+    .admin-content{padding:18px 20px 22px}
+    .admin-tabs{
+      display:grid;
+      grid-template-columns:repeat(7,minmax(110px,1fr));
+      gap:8px;
+      padding:12px 18px;
+      background:#f7faff;
+      border-bottom:1px solid #e2e8f0;
+      margin:0;
+    }
+    .admin-tabs .btn{
+      border-radius:10px;
+      min-height:42px;
+      padding:8px 9px;
+      font-size:12px;
+      box-shadow:none;
+    }
+    .admin-tabs .btn-primary{
+      box-shadow:0 5px 12px rgba(11,87,208,.18);
+    }
+    .admin-grid{
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+      margin-top:6px;
+    }
+    .admin-stat{
+      position:relative;
+      background:#fff;
+      border:1px solid #dbe5f2;
+      border-radius:14px;
+      padding:16px;
+      overflow:hidden;
+      min-height:92px;
+    }
+    .admin-stat:before{
+      content:"";
+      position:absolute;
+      inset:0 auto 0 0;
+      width:4px;
+      background:#0b57d0;
+    }
+    .admin-stat b{font-size:26px;line-height:1;color:#0f2747;margin-bottom:8px}
+    .admin-stat span{font-size:11px;letter-spacing:.15px;color:#64748b}
+    .admin-section-title{
+      padding:4px 0 12px;
+      border-bottom:1px solid #edf2f7;
+      margin-bottom:12px;
+    }
+    .admin-section-title h3{font-size:18px;color:#14233a}
+    .admin-toolbar{
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      padding:10px;
+      border-radius:12px;
+      margin:0 0 12px;
+    }
+    .admin-toolbar input,.admin-toolbar select{
+      min-height:40px;
+      background:#fff;
+      border-radius:9px;
+    }
+    .admin-table-wrap{
+      border-radius:12px;
+      border:1px solid #dbe5f2;
+      box-shadow:0 4px 14px rgba(15,23,42,.04);
+      background:#fff;
+    }
+    .admin-table{
+      font-size:12px;
+      min-width:920px;
+    }
+    .admin-table th{
+      padding:10px 9px;
+      background:#eef4ff;
+      color:#21466f;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.25px;
+      border-bottom:1px solid #cfdbeb;
+    }
+    .admin-table td{
+      padding:9px;
+      border-bottom:1px solid #edf2f7;
+    }
+    .admin-table tbody tr:hover{background:#f8fbff}
+    .admin-table tbody tr:last-child td{border-bottom:0}
+    .admin-actions .btn{
+      border-radius:8px;
+      font-size:10px;
+      font-weight:900;
+      min-height:30px;
+      padding:5px 8px;
+    }
+    .admin-quick-actions{
+      display:flex;gap:8px;flex-wrap:wrap;margin-top:14px
+    }
+    .admin-download-card{
+      border:1px solid #dbe5f2;
+      background:#f8fbff;
+      border-radius:14px;
+      padding:16px;
+      margin-top:10px
+    }
+    .admin-edit-box{
+      max-width:760px;
+      max-height:88vh;
+      overflow:auto;
+      border-radius:18px;
+    }
+    .admin-modal-head{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#fff;
+      padding-bottom:12px;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .admin-modal-kicker{
+      color:#0b57d0;
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.8px;
+    }
+    .admin-modal-grid{
+      margin-top:14px;
+      gap:12px;
+    }
+    .admin-modal-grid .field{
+      background:#f8fafc;
+      border:1px solid #e6ecf4;
+      padding:10px;
+      border-radius:11px;
+    }
+    .admin-modal-grid .field label{
+      margin-bottom:5px;
+      color:#334155;
+    }
+    .admin-modal-grid input,.admin-modal-grid select,.admin-modal-grid textarea{
+      background:#fff;
+    }
+    .admin-modal-actions{
+      position:sticky;
+      bottom:0;
+      display:grid;
+      grid-template-columns:1fr 1.4fr;
+      gap:8px;
+      background:#fff;
+      padding-top:14px;
+      margin-top:14px;
+      border-top:1px solid #e5e7eb;
+    }
+    @media(max-width:1000px){
+      .admin-tabs{grid-template-columns:repeat(4,1fr)}
+      .admin-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:650px){
+      #adminApp{padding:8px}
+      .admin-hero{align-items:flex-start;padding:16px;flex-direction:column}
+      .admin-hero-actions{width:100%}
+      .admin-hero-actions .btn{flex:1}
+      .admin-content{padding:12px}
+      .admin-tabs{grid-template-columns:repeat(2,1fr);padding:10px}
+      .admin-grid{grid-template-columns:repeat(2,1fr)}
+      .admin-stat{padding:13px;min-height:82px}
+      .admin-stat b{font-size:22px}
+      .admin-modal-actions{grid-template-columns:1fr 1fr}
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -805,12 +1006,16 @@
     <!-- ADMIN CONTROL CENTER -->
     <section id="adminApp" class="hidden admin-shell">
       <div class="card">
-        <div class="section-title">
+        <div class="admin-hero">
           <div>
-            <h2 style="margin-bottom:3px">Administrator Control Center</h2>
-            <div class="small muted">Full management of manpower, supervisors, equipment, attendance and approvals.</div>
+            <h2>Administrator Control Center</h2>
+            <div class="small muted">Manage manpower, users, vehicles/equipment, attendance and approvals from one place.</div>
+            <div class="admin-hero-badge">● FULL ADMIN ACCESS &nbsp; • &nbsp; DMT SEA PALACE</div>
           </div>
-          <button class="btn btn-danger" onclick="logout()">Logout</button>
+          <div class="admin-hero-actions">
+            <button class="btn btn-soft" onclick="adminLoadDashboard()">↻ Refresh</button>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+          </div>
         </div>
 
         <div class="admin-tabs">
@@ -823,13 +1028,14 @@
           <button class="btn btn-soft" onclick="adminShowTab('downloads',this)">Downloads</button>
         </div>
 
+        <div class="admin-content">
         <div id="adminNotice"></div>
 
         <div id="adminTabDashboard">
           <div id="adminDashboardStats" class="admin-grid"></div>
-          <div style="margin-top:14px">
-            <button class="btn btn-primary" onclick="adminSystemTest()">Run System Test</button>
-            <button class="btn btn-soft" onclick="adminLoadDashboard()">Refresh Dashboard</button>
+          <div class="admin-quick-actions">
+            <button class="btn btn-primary" onclick="adminSystemTest()">✓ Run System Test</button>
+            <button class="btn btn-soft" onclick="adminLoadDashboard()">↻ Refresh Dashboard</button>
           </div>
           <div id="adminSystemTestResult" style="margin-top:12px"></div>
         </div>
@@ -867,8 +1073,9 @@
         </div>
 
         <div id="adminTabDownloads" class="hidden">
-          <h3>Download System Data</h3>
-          <p class="muted small">Downloads are generated from the live Google data.</p>
+          <div class="admin-download-card">
+          <h3 style="margin-bottom:5px">Download System Data</h3>
+          <p class="muted small">Export live system records without opening Google Sheets.</p>
           <div class="row wrap">
             <button class="btn btn-primary" onclick="adminDownload('workers')">Download Employees CSV</button>
             <button class="btn btn-primary" onclick="adminDownload('supervisors')">Download Users CSV</button>
@@ -876,7 +1083,9 @@
             <button class="btn btn-primary" onclick="adminDownload('attendance')">Download Loaded Attendance CSV</button>
             <button class="btn btn-primary" onclick="adminDownload('approvals')">Download Approvals CSV</button>
           </div>
+          </div>
         </div>
+        </div><!-- /admin-content -->
       </div>
     </section>
 
@@ -1008,6 +1217,25 @@
       <input id="apiUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" />
     </div>
     <button class="btn btn-primary full" onclick="saveApiSettings()">Save API URL</button>
+  </div>
+</div>
+
+
+<!-- ADMIN EDIT MODAL -->
+<div class="modal hidden" id="adminEditModal">
+  <div class="modal-box admin-edit-box">
+    <div class="modal-head admin-modal-head">
+      <div>
+        <div class="admin-modal-kicker">ADMIN CONTROL</div>
+        <h2 id="adminEditTitle" style="margin:2px 0 0">Edit</h2>
+      </div>
+      <button class="icon-btn" onclick="adminCloseEdit()" aria-label="Close">✕</button>
+    </div>
+    <div id="adminEditBody"></div>
+    <div class="admin-modal-actions">
+      <button class="btn btn-soft" onclick="adminCloseEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="adminSaveEdit()">Save Changes</button>
+    </div>
   </div>
 </div>
 
@@ -1256,7 +1484,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v30";
+const CACHE_VERSION = "v31";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -3090,14 +3318,6 @@ function printCurrentStaff(){
         };
       <\/script>
     
-  <div class="modal hidden" id="adminEditModal">
-    <div class="modal-box" style="max-width:720px">
-      <div class="section-title"><h3 id="adminEditTitle">Edit</h3><button class="btn btn-soft" onclick="adminCloseEdit()">Close</button></div>
-      <div id="adminEditBody"></div>
-      <button class="btn btn-primary full" style="margin-top:14px" onclick="adminSaveEdit()">Save</button>
-    </div>
-  </div>
-
 </body>
     </html>
   `);
