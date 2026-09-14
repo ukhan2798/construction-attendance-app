@@ -415,6 +415,17 @@
     .sync-status.syncing .sync-dot{background:#2563eb}
 
       .no-ot-badge{display:inline-flex;margin-left:6px;padding:2px 7px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:10px;font-weight:900;vertical-align:middle}
+  
+    .worker-comment{margin-top:10px;padding-top:10px;border-top:1px dashed #dbe3ef}
+    .worker-comment textarea{min-height:58px;resize:vertical;font-size:13px;padding:9px 10px}
+    .comment-hint{font-size:11px;color:#64748b;margin-top:4px}
+    .submitted-comment{
+      margin-top:9px;padding:9px 10px;border-radius:9px;
+      background:#fff7ed;border:1px solid #fed7aa;font-size:12px;color:#7c2d12
+    }
+    .cm-comment{min-width:180px;max-width:280px;white-space:normal;line-height:1.25;text-align:left}
+    .cm-comment.has-comment{background:#fff7ed;font-weight:700;color:#7c2d12}
+
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -817,6 +828,7 @@
             <th>OT</th>
             <th>Total</th>
             <th>Location</th>
+            <th>Work / OT Comment</th>
           </tr>
         </thead>
         <tbody id="cmDetailRows"></tbody>
@@ -1127,7 +1139,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v24";
+const CACHE_VERSION = "v28";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -1439,7 +1451,7 @@ async function openCMApproval(approvalId){
   cmCurrentApproval = null;
   document.getElementById("cmRemark").value = "";
   document.getElementById("cmDetailRows").innerHTML =
-    `<tr><td colspan="9" style="text-align:center;padding:24px">Loading...</td></tr>`;
+    `<tr><td colspan="10" style="text-align:center;padding:24px">Loading...</td></tr>`;
   document.getElementById("cmDetailModal").classList.remove("hidden");
 
   try{
@@ -1477,8 +1489,11 @@ async function openCMApproval(approvalId){
           <td>${formatNumber(r.otHours)}</td>
           <td>${formatNumber(r.totalHours)}</td>
           <td>${escapeHtml(r.location)}</td>
+          <td class="cm-comment ${r.supervisorComment ? "has-comment" : ""}">
+            ${r.supervisorComment ? escapeHtml(r.supervisorComment) : "—"}
+          </td>
         </tr>
-      `).join("") || `<tr><td colspan="9" style="text-align:center;padding:24px">No attendance records found.</td></tr>`;
+      `).join("") || `<tr><td colspan="10" style="text-align:center;padding:24px">No attendance records found.</td></tr>`;
 
     document.getElementById("cmRemark").value = a.cmRemark || "";
     document.getElementById("cmRemark").disabled = statusClass !== "pending";
@@ -1486,7 +1501,7 @@ async function openCMApproval(approvalId){
 
   }catch(err){
     document.getElementById("cmDetailRows").innerHTML =
-      `<tr><td colspan="9"><div class="notice err">${escapeHtml(err.message)}</div></td></tr>`;
+      `<tr><td colspan="10"><div class="notice err">${escapeHtml(err.message)}</div></td></tr>`;
     document.getElementById("cmDecisionActions").classList.add("hidden");
   }
 }
@@ -1678,7 +1693,8 @@ function saveDailyDraft(){
     .map(w => ({
       workerId:w.workerId,
       workStatus:w.workStatus,
-      otHours:Number(w.otHours || 0)
+      otHours:Number(w.otHours || 0),
+      supervisorComment:String(w.supervisorComment || "")
     }));
 
   localStorage.setItem(key, JSON.stringify(draft));
@@ -1711,6 +1727,7 @@ function restoreDailyDraft(){
         ? Math.max(0,Math.min(8,Number(saved.otHours || 0)))
         : 0;
       w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
+      w.supervisorComment = String(saved.supervisorComment || "");
     }
   });
 }
@@ -1759,7 +1776,8 @@ function mergeTodayState(){
         totalHours:Number(submitted.totalHours || 0),
         submitted:true,
         correctionStatus:submitted.correctionStatus || "None",
-        submissionId:submitted.submissionId || ""
+        submissionId:submitted.submissionId || "",
+        supervisorComment:submitted.supervisorComment || ""
       };
     }
 
@@ -1776,7 +1794,8 @@ function mergeTodayState(){
       otHours:0,
       totalHours:defaultNormalHours,
       submitted:false,
-      correctionStatus:"None"
+      correctionStatus:"None",
+      supervisorComment:""
     };
   });
 }
@@ -1858,6 +1877,20 @@ function workerCardHtml(w,index){
         </div>
       </div>
 
+      ${(!locked && Number(w.otHours || 0) > 0) ? `
+        <div class="worker-comment">
+          <label>Work / OT Comment</label>
+          <textarea maxlength="500"
+            placeholder="Mention work done or reason for overtime..."
+            oninput="setSupervisorComment(${index},this.value)">${escapeHtml(w.supervisorComment || "")}</textarea>
+          <div class="comment-hint">Optional • CM will see this before approval.</div>
+        </div>
+      ` : ""}
+
+      ${(locked && w.supervisorComment) ? `
+        <div class="submitted-comment"><b>Work / OT Comment:</b> ${escapeHtml(w.supervisorComment)}</div>
+      ` : ""}
+
       ${locked ? `
         <div class="row wrap" style="justify-content:space-between;margin-top:10px">
           <div class="locked-note">🔒 Submitted${correctionText}</div>
@@ -1889,6 +1922,13 @@ function changeStatus(index,status){
   w.totalHours = Number(w.normalHours) + Number(w.otHours || 0);
   saveDailyDraft();
   renderWorkers();
+}
+
+function setSupervisorComment(index,value){
+  const w = workers[index];
+  if(!w || w.submitted) return;
+  w.supervisorComment = String(value || "").slice(0,500);
+  saveDailyDraft();
 }
 
 function setOT(index,value){
@@ -2028,7 +2068,8 @@ function dailyReportRows(){
     String(Number(w.normalHours || 0)),
     String(Number(w.otHours || 0)),
     String(Number(w.totalHours || 0)),
-    String(w.location || "")
+    String(w.location || ""),
+    String(w.supervisorComment || "")
   ]);
 }
 
@@ -2068,7 +2109,7 @@ async function makeDailyPdfBlob(){
   if(typeof doc.autoTable === "function"){
     doc.autoTable({
       startY:38,
-      head:[["#","Worker ID","Worker Name","Designation","Status","Normal","OT","Total","Location"]],
+      head:[["#","Worker ID","Worker Name","Designation","Status","Normal","OT","Total","Location","Work / OT Comment"]],
       body:dailyReportRows(),
       styles:{fontSize:7.5,cellPadding:2},
       headStyles:{fontStyle:"bold"},
@@ -2081,7 +2122,8 @@ async function makeDailyPdfBlob(){
         5:{cellWidth:16},
         6:{cellWidth:14},
         7:{cellWidth:16},
-        8:{cellWidth:36}
+        8:{cellWidth:28},
+        9:{cellWidth:48}
       }
     });
   }
