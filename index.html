@@ -487,7 +487,7 @@
     .admin-content{padding:18px 20px 22px}
     .admin-tabs{
       display:grid;
-      grid-template-columns:repeat(7,minmax(110px,1fr));
+      grid-template-columns:repeat(8,minmax(105px,1fr));
       gap:8px;
       padding:12px 18px;
       background:#f7faff;
@@ -652,6 +652,44 @@
       .admin-modal-actions{grid-template-columns:1fr 1fr}
     }
 
+
+    /* ===== ALL GOOGLE SHEETS MANAGER ===== */
+    .sheet-cards{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin-bottom:14px
+    }
+    .sheet-card{
+      border:1px solid #dbe5f2;
+      border-radius:12px;
+      padding:12px;
+      background:#fff;
+      cursor:pointer;
+      transition:.15s ease;
+    }
+    .sheet-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(15,23,42,.07)}
+    .sheet-card.active{border-color:#0b57d0;background:#f1f6ff;box-shadow:0 0 0 2px rgba(11,87,208,.08)}
+    .sheet-card b{display:block;color:#16365d;font-size:13px;margin-bottom:5px}
+    .sheet-card span{font-size:11px;color:#64748b}
+    .sheet-manager-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:12px 0}
+    .sheet-manager-name{font-size:17px;font-weight:900;color:#14233a}
+    .sheet-empty{padding:30px;text-align:center;color:#64748b}
+    .sheet-edit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    .sheet-edit-grid .field{margin:0}
+    @media(max-width:900px){.sheet-cards{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:600px){.sheet-cards{grid-template-columns:1fr}.sheet-edit-grid{grid-template-columns:1fr}}
+
+
+    .day-review-banner{
+      margin:10px 0;padding:10px 12px;border-radius:11px;
+      font-size:12px;font-weight:800
+    }
+    .day-review-banner.pending{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+    .day-review-banner.approved{background:#ecfdf3;color:#166534;border:1px solid #bbf7d0}
+    .day-review-banner.rejected{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
+    .cm-locked-note{padding:10px 12px;border-radius:10px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:800;margin-top:10px}
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -739,6 +777,8 @@
             <button class="btn btn-soft" type="button" onclick="clearAllOT()">OT = 0</button>
             <span id="draftStatus" class="draft-chip">Draft ready</span>
           </div>
+
+          <div id="dayReviewBanner" class="hidden"></div>
 
           <div class="summary-grid">
             <div class="summary-box"><b id="sumWorkers">0</b><span>WORKERS</span></div>
@@ -1025,6 +1065,7 @@
           <button class="btn btn-soft" onclick="adminShowTab('equipment',this)">Vehicles / Equipment</button>
           <button class="btn btn-soft" onclick="adminShowTab('attendance',this)">Attendance</button>
           <button class="btn btn-soft" onclick="adminShowTab('approvals',this)">Approvals</button>
+          <button class="btn btn-soft" onclick="adminShowTab('sheets',this)">All Sheets</button>
           <button class="btn btn-soft" onclick="adminShowTab('downloads',this)">Downloads</button>
         </div>
 
@@ -1070,6 +1111,37 @@
         <div id="adminTabApprovals" class="hidden">
           <div class="admin-section-title"><h3 style="margin:0">Daily CM Approvals</h3><button class="btn btn-soft" onclick="adminLoadApprovals()">Refresh</button></div>
           <div id="adminApprovalsTable"></div>
+        </div>
+
+
+        <div id="adminTabSheets" class="hidden">
+          <div class="admin-section-title">
+            <div>
+              <h3 style="margin:0">All Google Sheets Tabs</h3>
+              <div class="small muted" style="margin-top:4px">Manage every system tab without opening Google Sheets. Header row is protected.</div>
+            </div>
+            <button class="btn btn-soft" onclick="adminLoadSheetList()">↻ Refresh Tabs</button>
+          </div>
+
+          <div id="adminSheetCards" class="sheet-cards"></div>
+
+          <div id="adminSheetManager" class="hidden">
+            <div class="sheet-manager-title">
+              <div>
+                <div id="adminSheetManagerName" class="sheet-manager-name"></div>
+                <div id="adminSheetManagerMeta" class="small muted"></div>
+              </div>
+              <div class="row wrap">
+                <button class="btn btn-primary" onclick="adminOpenSheetRow()">+ Add Row</button>
+                <button class="btn btn-soft" onclick="adminReloadCurrentSheet()">Refresh</button>
+                <button class="btn btn-soft" onclick="adminDownloadCurrentSheet()">Download CSV</button>
+              </div>
+            </div>
+            <div class="admin-toolbar">
+              <input id="adminSheetSearch" placeholder="Search this sheet..." oninput="adminRenderCurrentSheet()">
+            </div>
+            <div id="adminSheetTable"></div>
+          </div>
         </div>
 
         <div id="adminTabDownloads" class="hidden">
@@ -1268,6 +1340,8 @@ let workers = [];
 let equipmentAssignments = [];
 let todayAttendance = [];
 let selectedAttendanceDate = getTodayISO();
+let selectedDayCMStatus = "";
+let selectedDayCMRemark = "";
 let monthlyRecords = [];
 let monthlyWorkers = [];
 let monthlyRoster = [];
@@ -1280,6 +1354,10 @@ let adminSupervisors = [];
 let adminEquipment = [];
 let adminAttendance = [];
 let adminApprovals = [];
+let adminSheetList = [];
+let adminCurrentSheetName = "";
+let adminCurrentSheetHeaders = [];
+let adminCurrentSheetRows = [];
 let correctionTarget = null;
 let cmApprovals = [];
 let cmCurrentApproval = null;
@@ -1484,7 +1562,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v31";
+const CACHE_VERSION = "v34";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -1871,6 +1949,18 @@ async function openCMApproval(approvalId){
     document.getElementById("cmRemark").disabled = statusClass !== "pending";
     document.getElementById("cmDecisionActions").classList.toggle("hidden", statusClass !== "pending");
 
+    const existingLockNote=document.getElementById("cmLockedNote");
+    if(existingLockNote) existingLockNote.remove();
+    if(statusClass !== "pending"){
+      const note=document.createElement("div");
+      note.id="cmLockedNote";
+      note.className="cm-locked-note";
+      note.textContent=statusClass==="approved"
+        ? "CM Approved — this decision is final and locked."
+        : "CM Rejected — the rejected full-day Attendance was removed. Supervisor must correct and resubmit.";
+      document.getElementById("cmDecisionActions").parentElement.appendChild(note);
+    }
+
   }catch(err){
     document.getElementById("cmDetailRows").innerHTML =
       `<tr><td colspan="10"><div class="notice err">${escapeHtml(err.message)}</div></td></tr>`;
@@ -1935,6 +2025,8 @@ async function loadCrewAndToday(options={}){
       workers = cached.value.workers || [];
       todayAttendance = cached.value.todayAttendance || [];
       equipmentAssignments = cached.value.equipmentAssignments || [];
+      selectedDayCMStatus = cached.value.cmStatus || "";
+      selectedDayCMRemark = cached.value.cmRemark || "";
 
       mergeTodayState();
       restoreDailyDraft();
@@ -1973,11 +2065,15 @@ async function loadCrewAndToday(options={}){
     workers = crewData.workers || [];
     todayAttendance = attendanceData.records || [];
     equipmentAssignments = equipmentData.assignments || [];
+    selectedDayCMStatus = attendanceData.cmStatus || "";
+    selectedDayCMRemark = attendanceData.cmRemark || "";
 
     setFastCache(key, {
       workers,
       todayAttendance,
-      equipmentAssignments
+      equipmentAssignments,
+      cmStatus:selectedDayCMStatus,
+      cmRemark:selectedDayCMRemark
     });
 
     // Keep a reusable current-staff/equipment cache too.
@@ -1998,6 +2094,8 @@ async function loadCrewAndToday(options={}){
       workers = cached.value.workers || [];
       todayAttendance = cached.value.todayAttendance || [];
       equipmentAssignments = cached.value.equipmentAssignments || [];
+      selectedDayCMStatus = cached.value.cmStatus || "";
+      selectedDayCMRemark = cached.value.cmRemark || "";
       mergeTodayState();
       restoreDailyDraft();
       renderWorkers();
@@ -2140,13 +2238,15 @@ function mergeTodayState(){
     const submitted = submittedMap.get(String(w.workerId));
 
     if(submitted){
+      const rejectedDay = String(selectedDayCMStatus || "").toLowerCase() === "rejected";
       return {
         ...w,
         workStatus:submitted.workStatus || "P",
         normalHours:Number(submitted.normalHours || 0),
         otHours:Number(submitted.otHours || 0),
         totalHours:Number(submitted.totalHours || 0),
-        submitted:true,
+        submitted:!rejectedDay,
+        rejectedForResubmit:rejectedDay,
         correctionStatus:submitted.correctionStatus || "None",
         submissionId:submitted.submissionId || "",
         supervisorComment:submitted.supervisorComment || ""
@@ -2186,8 +2286,32 @@ function renderWorkers(){
   }
 
   list.innerHTML = workers.map((w,index) => workerCardHtml(w,index)).join("");
+  renderDayReviewBanner();
   updateSummary();
   updateSubmitButton();
+}
+
+function renderDayReviewBanner(){
+  const box=document.getElementById("dayReviewBanner");
+  if(!box) return;
+  const status=String(selectedDayCMStatus||"").toLowerCase();
+  if(!status){
+    box.className="hidden";
+    box.innerHTML="";
+    return;
+  }
+  box.className=`day-review-banner ${status}`;
+  if(status==="pending"){
+    box.innerHTML="⏳ Submitted to CM • Waiting for approval. Attendance is locked.";
+  }else if(status==="approved"){
+    box.innerHTML="✓ CM Approved • Final and locked. No further approval is allowed.";
+  }else if(status==="rejected"){
+    box.innerHTML=`✕ CM Rejected • The rejected full-day Attendance was removed. Correct and resubmit.${
+      selectedDayCMRemark ? `<br><span style="font-weight:700">CM Remark: ${escapeHtml(selectedDayCMRemark)}</span>` : ""
+    }`;
+  }else{
+    box.innerHTML=escapeHtml(selectedDayCMStatus);
+  }
 }
 
 function workerCardHtml(w,index){
@@ -2350,10 +2474,12 @@ function updateSubmitButton(){
     btn.textContent = `${selectedAttendanceDate} Already Submitted`;
   }else{
     btn.disabled = false;
-    btn.textContent =
-      isToday
-        ? `Submit Today (${pending.length})`
-        : `Submit Backdated Attendance (${pending.length})`;
+    const rejectedDay = String(selectedDayCMStatus || "").toLowerCase() === "rejected";
+    btn.textContent = rejectedDay
+      ? `Resubmit Rejected Attendance (${pending.length})`
+      : (isToday
+          ? `Submit Today (${pending.length})`
+          : `Submit Backdated Attendance (${pending.length})`);
   }
 }
 async function submitAttendance(){
@@ -2365,9 +2491,12 @@ async function submitAttendance(){
   }
 
   const isBackdated = dateStr < getTodayISO();
-  const confirmText = isBackdated
-    ? `Submit BACKDATED attendance for ${dateStr} for ${pending.length} worker(s)? After submission, corrections must be requested.`
-    : `Submit today's attendance for ${pending.length} worker(s)? After submission, corrections must be requested.`;
+  const isRejectedResubmit = String(selectedDayCMStatus || "").toLowerCase() === "rejected";
+  const confirmText = isRejectedResubmit
+    ? `Resubmit the CM-REJECTED attendance for ${dateStr}? The corrected day will return to Pending CM approval.`
+    : (isBackdated
+      ? `Submit BACKDATED attendance for ${dateStr} for ${pending.length} worker(s)? After submission, corrections must be requested.`
+      : `Submit today's attendance for ${pending.length} worker(s)? After submission, corrections must be requested.`);
 
   if(!confirm(confirmText)){
     return;
@@ -2385,15 +2514,16 @@ async function submitAttendance(){
     supervisorId:currentSupervisor.supervisorId,
     workStatus:w.workStatus,
     otHours:w.otEligible === false ? 0 : Number(w.otHours || 0),
-    location:w.location || ""
+    location:w.location || "",
+    supervisorComment:String(w.supervisorComment || "")
   }));
 
   try{
     const data = await apiPost({
-      action:"submitAttendance",
+      action:isRejectedResubmit ? "resubmitRejectedAttendance" : "submitAttendance",
       supervisorId:currentSupervisor.supervisorId,
       records
-    },{queueIfOffline:true});
+    },{queueIfOffline:!isRejectedResubmit});
 
     if(data.queued){
       showGlobal("You are offline. Attendance is safely queued and will sync when internet returns.","warn");
@@ -2410,9 +2540,11 @@ async function submitAttendance(){
         localStorage.removeItem(cacheKey("month", dateStr.slice(0,7)));
       }catch{}
       showGlobal(
-        isBackdated
-          ? `Backdated attendance for ${dateStr} submitted and sent for CM approval.`
-          : "Attendance submitted successfully and sent for CM approval.",
+        isRejectedResubmit
+          ? `Rejected full-day attendance for ${dateStr} resubmitted as a clean replacement.`
+          : (isBackdated
+              ? `Backdated attendance for ${dateStr} submitted and sent for CM approval.`
+              : "Attendance submitted successfully and sent for CM approval."),
         "ok"
       );
       await loadCrewAndToday();
@@ -3704,7 +3836,7 @@ function adminNotice(message,type="ok"){
 }
 
 function adminShowTab(name,btn){
-  ["Dashboard","Workers","Supervisors","Equipment","Attendance","Approvals","Downloads"].forEach(x=>{
+  ["Dashboard","Workers","Supervisors","Equipment","Attendance","Approvals","Sheets","Downloads"].forEach(x=>{
     const el=document.getElementById("adminTab"+x);
     if(el) el.classList.toggle("hidden",x.toLowerCase()!==name.toLowerCase());
   });
@@ -3725,6 +3857,7 @@ function adminShowTab(name,btn){
     adminLoadAttendance();
   }
   if(name==="approvals") adminLoadApprovals();
+  if(name==="sheets") adminLoadSheetList();
 }
 
 async function adminLoadDashboard(){
@@ -3871,7 +4004,14 @@ async function adminLoadApprovals(){
   catch(e){adminNotice(e.message,"err");}
 }
 function adminRenderApprovals(){
-  const rows=adminApprovals.map(a=>`<tr><td>${escapeHtml(a.date)}</td><td>${escapeHtml(a.supervisorName||a.supervisorId)}</td><td>${a.workerCount}</td><td>${a.otHours}</td><td><span class="admin-status">${escapeHtml(a.cmStatus)}</span></td><td>${escapeHtml(a.cmRemark||"")}</td><td class="admin-actions"><button class="btn btn-primary" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','approve')">Approve</button><button class="btn btn-danger" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','reject')">Reject</button><button class="btn btn-soft" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','pending')">Pending</button></td></tr>`).join("");
+  const rows=adminApprovals.map(a=>{
+    const pending=String(a.cmStatus||"Pending").toLowerCase()==="pending";
+    return `<tr><td>${escapeHtml(a.date)}</td><td>${escapeHtml(a.supervisorName||a.supervisorId)}</td><td>${a.workerCount}</td><td>${a.otHours}</td><td><span class="admin-status">${escapeHtml(a.cmStatus)}</span></td><td>${escapeHtml(a.cmRemark||"")}</td><td class="admin-actions">${
+      pending
+        ? `<button class="btn btn-primary" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','approve')">Approve</button><button class="btn btn-danger" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','reject')">Reject</button>`
+        : `<span class="small muted">Locked</span>`
+    }</td></tr>`;
+  }).join("");
   document.getElementById("adminApprovalsTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Supervisor</th><th>Workers</th><th>OT</th><th>Status</th><th>Remark</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="7">No approvals found.</td></tr>`}</tbody></table></div>`;
 }
 async function adminHandleApproval(id,decision){
@@ -3920,10 +4060,138 @@ async function adminSaveEdit(){
         workStatus:document.getElementById("aaStatus").value,otHours:document.getElementById("aaOT").value,
         location:document.getElementById("aaLoc").value,supervisorComment:document.getElementById("aaComment").value
       })); await adminLoadAttendance();
+    }else if(adminEditType==="genericSheet"){
+      await adminSaveGenericSheetRow();
+      return;
     }
     adminCloseEdit(); adminNotice("Saved successfully.","ok"); await adminLoadDashboard();
   }catch(e){alert(e.message);}
 }
+
+
+async function adminLoadSheetList(){
+  try{
+    const d=await apiPost(adminAuthPayload({action:"adminListSheets"}));
+    adminSheetList=d.sheets||[];
+    document.getElementById("adminSheetCards").innerHTML=adminSheetList.map(s=>`
+      <div class="sheet-card ${adminCurrentSheetName===s.name?"active":""}" onclick='adminOpenSheet(${JSON.stringify(s.name)})'>
+        <b>${escapeHtml(s.name)}</b>
+        <span>${s.exists ? `${s.rows} rows • ${s.columns} columns` : "Missing"}</span>
+      </div>`).join("");
+
+    if(!adminSheetList.length){
+      document.getElementById("adminSheetCards").innerHTML=`<div class="sheet-empty">No sheets available.</div>`;
+    }
+  }catch(e){adminNotice(e.message,"err");}
+}
+
+async function adminOpenSheet(name){
+  adminCurrentSheetName=name;
+  await adminLoadSheetList();
+  document.getElementById("adminSheetManager").classList.remove("hidden");
+  document.getElementById("adminSheetManagerName").textContent=name;
+  await adminReloadCurrentSheet();
+}
+
+async function adminReloadCurrentSheet(){
+  if(!adminCurrentSheetName)return;
+  const box=document.getElementById("adminSheetTable");
+  box.innerHTML=`<div class="sheet-empty">Loading ${escapeHtml(adminCurrentSheetName)}...</div>`;
+  try{
+    const d=await apiPost(adminAuthPayload({action:"adminGetSheetData",sheetName:adminCurrentSheetName}));
+    adminCurrentSheetHeaders=d.headers||[];
+    adminCurrentSheetRows=d.rows||[];
+    document.getElementById("adminSheetManagerMeta").textContent=
+      `${adminCurrentSheetRows.length} rows • ${adminCurrentSheetHeaders.length} columns`;
+    adminRenderCurrentSheet();
+  }catch(e){
+    box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function adminRenderCurrentSheet(){
+  const q=(document.getElementById("adminSheetSearch")?.value||"").toLowerCase();
+  const rows=adminCurrentSheetRows.filter(r=>{
+    const hay=adminCurrentSheetHeaders.map(h=>String(r.values?.[h]??"")).join(" ").toLowerCase();
+    return !q||hay.includes(q);
+  });
+
+  if(!adminCurrentSheetHeaders.length){
+    document.getElementById("adminSheetTable").innerHTML=`<div class="sheet-empty">No headers found.</div>`;
+    return;
+  }
+
+  const head=adminCurrentSheetHeaders.map(h=>`<th>${escapeHtml(h)}</th>`).join("")+`<th>Actions</th>`;
+  const body=rows.map(r=>`<tr>${
+    adminCurrentSheetHeaders.map(h=>`<td>${escapeHtml(String(r.values?.[h]??""))}</td>`).join("")
+  }<td class="admin-actions">
+    <button class="btn btn-soft" onclick="adminOpenSheetRow(${r.rowNumber})">Edit</button>
+    <button class="btn btn-danger" onclick="adminDeleteSheetRow(${r.rowNumber})">Delete</button>
+  </td></tr>`).join("");
+
+  document.getElementById("adminSheetTable").innerHTML=
+    `<div class="admin-table-wrap"><table class="admin-table"><thead><tr>${head}</tr></thead><tbody>${
+      body||`<tr><td colspan="${adminCurrentSheetHeaders.length+1}">No matching rows.</td></tr>`
+    }</tbody></table></div>`;
+}
+
+function adminOpenSheetRow(rowNumber){
+  if(!adminCurrentSheetName)return;
+  adminEditType="genericSheet";
+  adminEditData=adminCurrentSheetRows.find(x=>Number(x.rowNumber)===Number(rowNumber))||{rowNumber:0,values:{}};
+
+  const fields=adminCurrentSheetHeaders.map(h=>{
+    const value=adminEditData.values?.[h]??"";
+    const isDate=/Date$/i.test(h);
+    const inputType=isDate?"date":"text";
+    const safeValue=isDate && /^\d{4}-\d{2}-\d{2}/.test(String(value)) ? String(value).slice(0,10) : String(value);
+    return `<div class="field"><label>${escapeHtml(h)}</label><input data-sheet-header="${escapeHtml(h)}" type="${inputType}" value="${escapeHtml(safeValue)}"></div>`;
+  }).join("");
+
+  adminOpenEdit(
+    `${adminCurrentSheetName} ${rowNumber ? "Row "+rowNumber : "— Add Row"}`,
+    `<div class="sheet-edit-grid">${fields}</div>`
+  );
+}
+
+async function adminSaveGenericSheetRow(){
+  const values={};
+  document.querySelectorAll("#adminEditBody [data-sheet-header]").forEach(el=>{
+    values[el.getAttribute("data-sheet-header")]=el.value;
+  });
+
+  const d=await apiPost(adminAuthPayload({
+    action:"adminSaveSheetRow",
+    sheetName:adminCurrentSheetName,
+    rowNumber:adminEditData?.rowNumber||0,
+    values
+  }));
+  adminCloseEdit();
+  adminNotice(d.message||"Row saved.","ok");
+  await adminReloadCurrentSheet();
+  await adminLoadSheetList();
+}
+
+async function adminDeleteSheetRow(rowNumber){
+  if(!confirm(`Delete row ${rowNumber} from ${adminCurrentSheetName}?`))return;
+  try{
+    const d=await apiPost(adminAuthPayload({
+      action:"adminDeleteSheetRow",
+      sheetName:adminCurrentSheetName,
+      rowNumber
+    }));
+    adminNotice(d.message,"ok");
+    await adminReloadCurrentSheet();
+    await adminLoadSheetList();
+  }catch(e){adminNotice(e.message,"err");}
+}
+
+function adminDownloadCurrentSheet(){
+  if(!adminCurrentSheetRows.length)return alert("No rows loaded.");
+  const rows=adminCurrentSheetRows.map(r=>r.values||{});
+  downloadCsv(adminCurrentSheetName.replace(/\s+/g,"_")+".csv",rows);
+}
+
 
 function csvEscape(v){
   const s=String(v??"");
