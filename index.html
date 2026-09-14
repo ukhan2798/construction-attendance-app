@@ -426,7 +426,32 @@
     .cm-comment{min-width:180px;max-width:280px;white-space:normal;line-height:1.25;text-align:left}
     .cm-comment.has-comment{background:#fff7ed;font-weight:700;color:#7c2d12}
 
-  </style>
+  
+    .admin-shell{max-width:1180px;margin:0 auto}
+    .admin-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+    .admin-tabs button{min-height:38px;padding:8px 11px}
+    .admin-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .admin-stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px}
+    .admin-stat b{display:block;font-size:22px}.admin-stat span{font-size:11px;color:#64748b;font-weight:800}
+    .admin-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+    .admin-toolbar input,.admin-toolbar select{width:auto;min-width:150px;flex:1}
+    .admin-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+    .admin-table{width:100%;border-collapse:collapse;font-size:12px;min-width:850px}
+    .admin-table th,.admin-table td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:middle}
+    .admin-table th{position:sticky;top:0;background:#eef4ff;color:#1e3a5f;z-index:1}
+    .admin-actions{display:flex;gap:5px;white-space:nowrap}
+    .admin-actions .btn{min-height:32px;padding:6px 8px;font-size:11px}
+    .admin-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .admin-modal-grid .field{margin:0}
+    .admin-section-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+    .admin-status{padding:5px 8px;border-radius:999px;font-weight:800;font-size:11px;background:#eef2ff}
+    @media(max-width:700px){
+      .admin-grid{grid-template-columns:1fr 1fr}
+      .admin-modal-grid{grid-template-columns:1fr}
+      .admin-tabs{display:grid;grid-template-columns:1fr 1fr}
+    }
+
+</style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
@@ -776,6 +801,85 @@
       </div>
     </section>
 
+
+    <!-- ADMIN CONTROL CENTER -->
+    <section id="adminApp" class="hidden admin-shell">
+      <div class="card">
+        <div class="section-title">
+          <div>
+            <h2 style="margin-bottom:3px">Administrator Control Center</h2>
+            <div class="small muted">Full management of manpower, supervisors, equipment, attendance and approvals.</div>
+          </div>
+          <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="admin-tabs">
+          <button class="btn btn-primary" onclick="adminShowTab('dashboard',this)">Dashboard</button>
+          <button class="btn btn-soft" onclick="adminShowTab('workers',this)">Employees</button>
+          <button class="btn btn-soft" onclick="adminShowTab('supervisors',this)">Users</button>
+          <button class="btn btn-soft" onclick="adminShowTab('equipment',this)">Vehicles / Equipment</button>
+          <button class="btn btn-soft" onclick="adminShowTab('attendance',this)">Attendance</button>
+          <button class="btn btn-soft" onclick="adminShowTab('approvals',this)">Approvals</button>
+          <button class="btn btn-soft" onclick="adminShowTab('downloads',this)">Downloads</button>
+        </div>
+
+        <div id="adminNotice"></div>
+
+        <div id="adminTabDashboard">
+          <div id="adminDashboardStats" class="admin-grid"></div>
+          <div style="margin-top:14px">
+            <button class="btn btn-primary" onclick="adminSystemTest()">Run System Test</button>
+            <button class="btn btn-soft" onclick="adminLoadDashboard()">Refresh Dashboard</button>
+          </div>
+          <div id="adminSystemTestResult" style="margin-top:12px"></div>
+        </div>
+
+        <div id="adminTabWorkers" class="hidden">
+          <div class="admin-section-title"><h3 style="margin:0">Employee Management</h3><button class="btn btn-primary" onclick="adminOpenWorker()">+ Add Employee</button></div>
+          <div class="admin-toolbar"><input id="adminWorkerSearch" placeholder="Search ID, name, designation..." oninput="adminRenderWorkers()"><select id="adminWorkerStatus" onchange="adminRenderWorkers()"><option value="ALL">All Status</option><option>Active</option><option>Released</option><option>Inactive</option></select><button class="btn btn-soft" onclick="adminLoadWorkers()">Refresh</button></div>
+          <div id="adminWorkersTable"></div>
+        </div>
+
+        <div id="adminTabSupervisors" class="hidden">
+          <div class="admin-section-title"><h3 style="margin:0">Supervisor / CM Accounts</h3><button class="btn btn-primary" onclick="adminOpenSupervisor()">+ Add User</button></div>
+          <div id="adminSupervisorsTable"></div>
+        </div>
+
+        <div id="adminTabEquipment" class="hidden">
+          <div class="admin-section-title"><h3 style="margin:0">Vehicle / Equipment Assignments</h3><button class="btn btn-primary" onclick="adminOpenEquipment()">+ Add Assignment</button></div>
+          <div id="adminEquipmentTable"></div>
+        </div>
+
+        <div id="adminTabAttendance" class="hidden">
+          <div class="admin-section-title"><h3 style="margin:0">Attendance Records</h3></div>
+          <div class="admin-toolbar">
+            <input id="adminAttendanceFrom" type="date">
+            <input id="adminAttendanceTo" type="date">
+            <input id="adminAttendanceSearch" placeholder="Search employee..." oninput="adminRenderAttendance()">
+            <button class="btn btn-primary" onclick="adminLoadAttendance()">Load</button>
+          </div>
+          <div id="adminAttendanceTable"></div>
+        </div>
+
+        <div id="adminTabApprovals" class="hidden">
+          <div class="admin-section-title"><h3 style="margin:0">Daily CM Approvals</h3><button class="btn btn-soft" onclick="adminLoadApprovals()">Refresh</button></div>
+          <div id="adminApprovalsTable"></div>
+        </div>
+
+        <div id="adminTabDownloads" class="hidden">
+          <h3>Download System Data</h3>
+          <p class="muted small">Downloads are generated from the live Google data.</p>
+          <div class="row wrap">
+            <button class="btn btn-primary" onclick="adminDownload('workers')">Download Employees CSV</button>
+            <button class="btn btn-primary" onclick="adminDownload('supervisors')">Download Users CSV</button>
+            <button class="btn btn-primary" onclick="adminDownload('equipment')">Download Equipment CSV</button>
+            <button class="btn btn-primary" onclick="adminDownload('attendance')">Download Loaded Attendance CSV</button>
+            <button class="btn btn-primary" onclick="adminDownload('approvals')">Download Approvals CSV</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <nav class="nav hidden" id="bottomNav">
@@ -940,6 +1044,14 @@ let monthlyRecords = [];
 let monthlyWorkers = [];
 let monthlyRoster = [];
 let currentSupervisor = null;
+let adminPin = "";
+let adminEditType = "";
+let adminEditData = null;
+let adminWorkers = [];
+let adminSupervisors = [];
+let adminEquipment = [];
+let adminAttendance = [];
+let adminApprovals = [];
 let correctionTarget = null;
 let cmApprovals = [];
 let cmCurrentApproval = null;
@@ -1139,7 +1251,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v28";
+const CACHE_VERSION = "v29";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -1264,7 +1376,12 @@ async function login(){
 
     sessionStorage.setItem("attendance_supervisor",JSON.stringify(currentSupervisor));
 
-    if(isCMUser()){
+    if(isAdminUser()){
+      adminPin = pin;
+      sessionStorage.setItem("attendance_admin_pin", adminPin);
+      showAdminApp();
+      await adminLoadDashboard();
+    }else if(isCMUser()){
       showCMApp();
       await loadCMApprovals();
     }else{
@@ -1280,11 +1397,30 @@ async function login(){
 }
 
 
+function isAdminUser(){
+  return !!(
+    currentSupervisor &&
+    String(currentSupervisor.supervisorId || "").trim().toUpperCase() === "ADMIN"
+  );
+}
+
 function isCMUser(){
   return !!(
     currentSupervisor &&
     /^CM/i.test(String(currentSupervisor.supervisorId || "").trim())
   );
+}
+
+function showAdminApp(){
+  document.getElementById("loginView").classList.add("hidden");
+  document.getElementById("mainApp").classList.add("hidden");
+  document.getElementById("cmApp").classList.add("hidden");
+  document.getElementById("adminApp").classList.remove("hidden");
+  document.getElementById("appHeader").classList.remove("hidden");
+  document.getElementById("bottomNav").classList.add("hidden");
+  const brand = document.querySelector(".brand-title");
+  if(brand) brand.textContent = "DMT Sea Palace - Admin Control";
+  document.getElementById("headerSupervisor").textContent = "System Administrator • ADMIN";
 }
 
 function showCMApp(){
@@ -1332,12 +1468,15 @@ function showMainApp(){
 
 function logout(){
   sessionStorage.removeItem("attendance_supervisor");
+  sessionStorage.removeItem("attendance_admin_pin");
+  adminPin = "";
   currentSupervisor = null;
   workers = [];
   equipmentAssignments = [];
   todayAttendance = [];
   document.getElementById("mainApp").classList.add("hidden");
   document.getElementById("cmApp").classList.add("hidden");
+  document.getElementById("adminApp").classList.add("hidden");
   document.getElementById("cmDetailModal").classList.add("hidden");
   document.getElementById("appHeader").classList.add("hidden");
   document.getElementById("bottomNav").classList.add("hidden");
@@ -2945,7 +3084,16 @@ function printCurrentStaff(){
           setTimeout(function(){ window.print(); },300);
         };
       <\/script>
-    </body>
+    
+  <div class="modal hidden" id="adminEditModal">
+    <div class="modal-box" style="max-width:720px">
+      <div class="section-title"><h3 id="adminEditTitle">Edit</h3><button class="btn btn-soft" onclick="adminCloseEdit()">Close</button></div>
+      <div id="adminEditBody"></div>
+      <button class="btn btn-primary full" style="margin-top:14px" onclick="adminSaveEdit()">Save</button>
+    </div>
+  </div>
+
+</body>
     </html>
   `);
 
@@ -3312,6 +3460,265 @@ function updateQueueChip(){
     chip.classList.add("hidden");
   }
 }
+
+
+/* =========================================================
+   ADMIN CONTROL CENTER
+========================================================= */
+
+function adminAuthPayload(extra={}){
+  return {
+    adminId:"ADMIN",
+    adminPin:adminPin || sessionStorage.getItem("attendance_admin_pin") || "",
+    ...extra
+  };
+}
+
+function adminNotice(message,type="ok"){
+  showNotice("adminNotice",message,type);
+}
+
+function adminShowTab(name,btn){
+  ["Dashboard","Workers","Supervisors","Equipment","Attendance","Approvals","Downloads"].forEach(x=>{
+    const el=document.getElementById("adminTab"+x);
+    if(el) el.classList.toggle("hidden",x.toLowerCase()!==name.toLowerCase());
+  });
+  document.querySelectorAll(".admin-tabs button").forEach(b=>{
+    b.classList.remove("btn-primary"); b.classList.add("btn-soft");
+  });
+  if(btn){btn.classList.remove("btn-soft");btn.classList.add("btn-primary");}
+
+  if(name==="workers") adminLoadWorkers();
+  if(name==="supervisors") adminLoadSupervisors();
+  if(name==="equipment") adminLoadEquipment();
+  if(name==="attendance"){
+    const today=getTodayISO();
+    if(!document.getElementById("adminAttendanceFrom").value){
+      document.getElementById("adminAttendanceFrom").value=today.slice(0,8)+"01";
+      document.getElementById("adminAttendanceTo").value=today;
+    }
+    adminLoadAttendance();
+  }
+  if(name==="approvals") adminLoadApprovals();
+}
+
+async function adminLoadDashboard(){
+  try{
+    const d=await apiPost(adminAuthPayload({action:"adminGetDashboard"}));
+    const x=d.dashboard||{};
+    const stats=[
+      ["Active Employees",x.activeWorkers||0],["All Employee Rows",x.workerRows||0],
+      ["Users",x.supervisors||0],["Attendance Records",x.attendanceRows||0],
+      ["Equipment",x.equipmentRows||0],["Pending Approvals",x.pendingApprovals||0],
+      ["Corrections",x.correctionRows||0],["Transfers",x.transferRows||0]
+    ];
+    document.getElementById("adminDashboardStats").innerHTML=stats.map(s=>
+      `<div class="admin-stat"><b>${escapeHtml(String(s[1]))}</b><span>${escapeHtml(s[0])}</span></div>`
+    ).join("");
+  }catch(e){adminNotice(e.message,"err");}
+}
+
+async function adminSystemTest(){
+  const box=document.getElementById("adminSystemTestResult");
+  box.innerHTML=`<div class="empty"><div class="spinner"></div>Testing...</div>`;
+  try{
+    const d=await apiPost(adminAuthPayload({action:"adminSystemTest"}));
+    const t=d.test;
+    box.innerHTML=`<div class="notice ${t.allGood?"ok":"warn"}"><b>${escapeHtml(t.spreadsheet)}</b><br>${
+      t.sheets.map(x=>`${x.ok?"✓":"✕"} ${escapeHtml(x.name)} — ${x.ok?x.rows+" rows":"Missing"}`).join("<br>")
+    }</div>`;
+  }catch(e){box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;}
+}
+
+async function adminLoadWorkers(){
+  try{const d=await apiPost(adminAuthPayload({action:"adminGetWorkers"}));adminWorkers=d.workers||[];adminRenderWorkers();}
+  catch(e){adminNotice(e.message,"err");}
+}
+function adminRenderWorkers(){
+  const q=(document.getElementById("adminWorkerSearch")?.value||"").toLowerCase();
+  const st=document.getElementById("adminWorkerStatus")?.value||"ALL";
+  const rows=adminWorkers.filter(w=>{
+    const text=`${w.workerId} ${w.workerName} ${w.designation} ${w.trade} ${w.location}`.toLowerCase();
+    return (!q||text.includes(q)) && (st==="ALL"||String(w.status).toLowerCase()===st.toLowerCase());
+  }).map(w=>`<tr>
+    <td>${escapeHtml(w.workerId)}</td><td><b>${escapeHtml(w.workerName)}</b></td>
+    <td>${escapeHtml(w.designation)}</td><td>${escapeHtml(w.supervisorId||"—")}</td>
+    <td>${escapeHtml(w.location)}</td><td>${escapeHtml(w.status)}</td>
+    <td>${w.otEligible?"Yes":"No"}</td>
+    <td class="admin-actions">
+      <button class="btn btn-soft" onclick='adminOpenWorker(${JSON.stringify(w.rowNumber)})'>Edit</button>
+      ${String(w.status).toLowerCase()==="active"
+        ? `<button class="btn btn-warn" onclick="adminReleaseWorker('${escapeHtml(w.workerId)}')">Release</button>`
+        : `<button class="btn btn-soft" onclick="adminWorkerAction('${escapeHtml(w.workerId)}','reactivate')">Reactivate</button>`}
+      <button class="btn btn-danger" onclick="adminWorkerAction('${escapeHtml(w.workerId)}','delete')">Delete</button>
+    </td></tr>`).join("");
+  document.getElementById("adminWorkersTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>Name</th><th>Designation</th><th>Supervisor</th><th>Location</th><th>Status</th><th>OT</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="8">No employees found.</td></tr>`}</tbody></table></div>`;
+}
+function adminOpenWorker(rowNumber){
+  adminEditType="worker";
+  adminEditData=adminWorkers.find(x=>Number(x.rowNumber)===Number(rowNumber))||{};
+  const w=adminEditData;
+  adminOpenEdit("Employee",`
+    <div class="admin-modal-grid">
+      ${adminField("Worker ID","awId",w.workerId||"")}
+      ${adminField("Worker Name","awName",w.workerName||"")}
+      ${adminField("Designation","awDes",w.designation||"")}
+      ${adminField("Trade","awTrade",w.trade||"")}
+      ${adminField("Supervisor ID","awSup",w.supervisorId||"")}
+      ${adminField("Location","awLoc",w.location||"")}
+      ${adminField("Project","awProj",w.project||"DMT-25221")}
+      ${adminField("Status","awStatus",w.status||"Active")}
+      ${adminField("Joining Date","awJoin",w.joiningDate||"","date")}
+      ${adminField("Last Working Date","awLast",w.lastWorkingDate||"","date")}
+      <div class="field"><label>OT Eligible</label><select id="awOT"><option value="Yes" ${w.otEligible!==false?"selected":""}>Yes</option><option value="No" ${w.otEligible===false?"selected":""}>No</option></select></div>
+    </div>`);
+}
+async function adminReleaseWorker(id){
+  const d=prompt("Last Working Date (YYYY-MM-DD):",getTodayISO()); if(!d)return;
+  if(!confirm(`Release ${id} with last working date ${d}?`)) return;
+  await adminWorkerAction(id,"release",d);
+}
+async function adminWorkerAction(id,mode,lastWorkingDate=""){
+  if(mode==="delete"&&!confirm(`Delete ${id} from Workers sheet? Historical attendance will remain.`))return;
+  try{const d=await apiPost(adminAuthPayload({action:"adminWorkerAction",workerId:id,mode,lastWorkingDate}));adminNotice(d.message,"ok");await adminLoadWorkers();await adminLoadDashboard();}
+  catch(e){adminNotice(e.message,"err");}
+}
+
+async function adminLoadSupervisors(){
+  try{const d=await apiPost(adminAuthPayload({action:"adminGetSupervisors"}));adminSupervisors=d.supervisors||[];adminRenderSupervisors();}
+  catch(e){adminNotice(e.message,"err");}
+}
+function adminRenderSupervisors(){
+  const rows=adminSupervisors.map(s=>`<tr><td>${escapeHtml(s.supervisorId)}</td><td><b>${escapeHtml(s.supervisorName)}</b></td><td>${escapeHtml(s.project)}</td><td>${escapeHtml(s.status)}</td><td class="admin-actions"><button class="btn btn-soft" onclick="adminOpenSupervisor(${s.rowNumber})">Edit</button><button class="btn btn-warn" onclick="adminSupervisorAction('${escapeHtml(s.supervisorId)}','${String(s.status).toLowerCase()==='active'?'deactivate':'activate'}')">${String(s.status).toLowerCase()==='active'?'Deactivate':'Activate'}</button><button class="btn btn-danger" onclick="adminSupervisorAction('${escapeHtml(s.supervisorId)}','delete')">Delete</button></td></tr>`).join("");
+  document.getElementById("adminSupervisorsTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ID</th><th>Name</th><th>Project</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="5">No users found.</td></tr>`}</tbody></table></div>`;
+}
+function adminOpenSupervisor(rowNumber){
+  adminEditType="supervisor";adminEditData=adminSupervisors.find(x=>Number(x.rowNumber)===Number(rowNumber))||{};const s=adminEditData;
+  adminOpenEdit("Supervisor / CM User",`<div class="admin-modal-grid">${adminField("User ID","asId",s.supervisorId||"")}${adminField("Name","asName",s.supervisorName||"")}${adminField("PIN","asPin",s.pin||"","password")}${adminField("Project","asProj",s.project||"DMT Sea Palace")}${adminField("Status","asStatus",s.status||"Active")}</div>`);
+}
+async function adminSupervisorAction(id,mode){
+  if(mode==="delete"&&!confirm(`Delete user ${id}?`))return;
+  try{const d=await apiPost(adminAuthPayload({action:"adminSupervisorAction",supervisorId:id,mode}));adminNotice(d.message,"ok");await adminLoadSupervisors();}
+  catch(e){adminNotice(e.message,"err");}
+}
+
+async function adminLoadEquipment(){
+  try{const d=await apiPost(adminAuthPayload({action:"adminGetEquipment"}));adminEquipment=d.assignments||[];adminRenderEquipment();}
+  catch(e){adminNotice(e.message,"err");}
+}
+function adminRenderEquipment(){
+  const rows=adminEquipment.map(a=>`<tr><td>${escapeHtml(a.employeeId)}</td><td>${escapeHtml(a.employeeName)}</td><td>${escapeHtml(a.vehicle||"—")}</td><td>${escapeHtml(a.equipment||"—")}</td><td>${escapeHtml(a.plateAssetNo||"—")}</td><td>${escapeHtml(a.location)}</td><td>${escapeHtml(a.status)}</td><td class="admin-actions"><button class="btn btn-soft" onclick="adminOpenEquipment(${a.rowNumber})">Edit</button><button class="btn btn-danger" onclick="adminDeleteEquipment(${a.rowNumber})">Delete</button></td></tr>`).join("");
+  document.getElementById("adminEquipmentTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Employee ID</th><th>Name</th><th>Vehicle</th><th>Equipment</th><th>Plate/Asset</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="8">No assignments found.</td></tr>`}</tbody></table></div>`;
+}
+function adminOpenEquipment(rowNumber){
+  adminEditType="equipment";adminEditData=adminEquipment.find(x=>Number(x.rowNumber)===Number(rowNumber))||{};const a=adminEditData;
+  adminOpenEdit("Vehicle / Equipment Assignment",`<div class="admin-modal-grid">${adminField("Employee ID","aeId",a.employeeId||"")}${adminField("Employee Name","aeName",a.employeeName||"")}${adminField("Designation","aeDes",a.designation||"")}${adminField("Vehicle","aeVehicle",a.vehicle||"")}${adminField("Equipment","aeEquipment",a.equipment||"")}${adminField("Plate / Asset No","aePlate",a.plateAssetNo||"")}${adminField("Location","aeLoc",a.location||"")}${adminField("Supervisor ID","aeSup",a.supervisorId||"")}${adminField("Status","aeStatus",a.status||"Assigned")}${adminField("Assigned Date","aeDate",a.assignedDate||getTodayISO(),"date")}${adminField("Remarks","aeRemarks",a.remarks||"")}</div>`);
+}
+async function adminDeleteEquipment(row){
+  if(!confirm("Delete this equipment assignment?"))return;
+  try{const d=await apiPost(adminAuthPayload({action:"adminDeleteEquipment",rowNumber:row}));adminNotice(d.message,"ok");await adminLoadEquipment();}
+  catch(e){adminNotice(e.message,"err");}
+}
+
+async function adminLoadAttendance(){
+  const from=document.getElementById("adminAttendanceFrom").value,to=document.getElementById("adminAttendanceTo").value;
+  if(!from||!to)return;
+  try{const d=await apiPost(adminAuthPayload({action:"adminGetAttendance",fromDate:from,toDate:to}));adminAttendance=d.records||[];adminRenderAttendance();}
+  catch(e){adminNotice(e.message,"err");}
+}
+function adminRenderAttendance(){
+  const q=(document.getElementById("adminAttendanceSearch")?.value||"").toLowerCase();
+  const rows=adminAttendance.filter(r=>`${r.workerId} ${r.workerName} ${r.supervisorId}`.toLowerCase().includes(q)).map(r=>`<tr><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.workerId)}</td><td><b>${escapeHtml(r.workerName)}</b></td><td>${escapeHtml(r.supervisorId)}</td><td>${escapeHtml(r.workStatus)}</td><td>${r.normalHours}</td><td>${r.otHours}</td><td>${r.totalHours}</td><td>${escapeHtml(r.supervisorComment||"")}</td><td class="admin-actions"><button class="btn btn-soft" onclick="adminOpenAttendance(${r.rowNumber})">Edit</button><button class="btn btn-danger" onclick="adminDeleteAttendance(${r.rowNumber})">Delete</button></td></tr>`).join("");
+  document.getElementById("adminAttendanceTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>ID</th><th>Name</th><th>Supervisor</th><th>Status</th><th>Normal</th><th>OT</th><th>Total</th><th>Comment</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="10">No records found.</td></tr>`}</tbody></table></div>`;
+}
+function adminOpenAttendance(rowNumber){
+  adminEditType="attendance";adminEditData=adminAttendance.find(x=>Number(x.rowNumber)===Number(rowNumber))||{};const r=adminEditData;
+  adminOpenEdit(`Attendance: ${r.workerName||""}`,`<div class="admin-modal-grid"><div class="field"><label>Work Status</label><select id="aaStatus">${["P","A","OFF","AL","EL","SL","PH","BD"].map(x=>`<option ${r.workStatus===x?"selected":""}>${x}</option>`).join("")}</select></div>${adminField("OT Hours","aaOT",r.otHours||0,"number")}${adminField("Location","aaLoc",r.location||"")}<div class="field" style="grid-column:1/-1"><label>Supervisor Comment</label><textarea id="aaComment">${escapeHtml(r.supervisorComment||"")}</textarea></div></div>`);
+}
+async function adminDeleteAttendance(row){
+  if(!confirm("Delete this attendance record?"))return;
+  try{const d=await apiPost(adminAuthPayload({action:"adminDeleteAttendance",rowNumber:row}));adminNotice(d.message,"ok");await adminLoadAttendance();}
+  catch(e){adminNotice(e.message,"err");}
+}
+
+async function adminLoadApprovals(){
+  try{const d=await apiPost(adminAuthPayload({action:"adminGetApprovals"}));adminApprovals=d.approvals||[];adminRenderApprovals();}
+  catch(e){adminNotice(e.message,"err");}
+}
+function adminRenderApprovals(){
+  const rows=adminApprovals.map(a=>`<tr><td>${escapeHtml(a.date)}</td><td>${escapeHtml(a.supervisorName||a.supervisorId)}</td><td>${a.workerCount}</td><td>${a.otHours}</td><td><span class="admin-status">${escapeHtml(a.cmStatus)}</span></td><td>${escapeHtml(a.cmRemark||"")}</td><td class="admin-actions"><button class="btn btn-primary" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','approve')">Approve</button><button class="btn btn-danger" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','reject')">Reject</button><button class="btn btn-soft" onclick="adminHandleApproval('${escapeHtml(a.approvalId)}','pending')">Pending</button></td></tr>`).join("");
+  document.getElementById("adminApprovalsTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Supervisor</th><th>Workers</th><th>OT</th><th>Status</th><th>Remark</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="7">No approvals found.</td></tr>`}</tbody></table></div>`;
+}
+async function adminHandleApproval(id,decision){
+  const remark=prompt("Admin remark (optional):","")||"";
+  try{const d=await apiPost(adminAuthPayload({action:"adminHandleApproval",approvalId:id,decision,remark}));adminNotice(d.message,"ok");await adminLoadApprovals();await adminLoadDashboard();}
+  catch(e){adminNotice(e.message,"err");}
+}
+
+function adminField(label,id,value,type="text"){
+  return `<div class="field"><label>${escapeHtml(label)}</label><input id="${id}" type="${type}" value="${escapeHtml(String(value??""))}"></div>`;
+}
+function adminOpenEdit(title,body){
+  document.getElementById("adminEditTitle").textContent=title;
+  document.getElementById("adminEditBody").innerHTML=body;
+  document.getElementById("adminEditModal").classList.remove("hidden");
+}
+function adminCloseEdit(){document.getElementById("adminEditModal").classList.add("hidden");adminEditType="";adminEditData=null;}
+
+async function adminSaveEdit(){
+  try{
+    if(adminEditType==="worker"){
+      await apiPost(adminAuthPayload({action:"adminSaveWorker",worker:{
+        workerId:document.getElementById("awId").value,workerName:document.getElementById("awName").value,
+        designation:document.getElementById("awDes").value,trade:document.getElementById("awTrade").value,
+        supervisorId:document.getElementById("awSup").value,location:document.getElementById("awLoc").value,
+        project:document.getElementById("awProj").value,status:document.getElementById("awStatus").value,
+        joiningDate:document.getElementById("awJoin").value,lastWorkingDate:document.getElementById("awLast").value,
+        otEligible:document.getElementById("awOT").value
+      }})); await adminLoadWorkers();
+    }else if(adminEditType==="supervisor"){
+      await apiPost(adminAuthPayload({action:"adminSaveSupervisor",supervisor:{
+        supervisorId:document.getElementById("asId").value,supervisorName:document.getElementById("asName").value,
+        pin:document.getElementById("asPin").value,project:document.getElementById("asProj").value,status:document.getElementById("asStatus").value
+      }})); await adminLoadSupervisors();
+    }else if(adminEditType==="equipment"){
+      await apiPost(adminAuthPayload({action:"adminSaveEquipment",assignment:{
+        rowNumber:adminEditData?.rowNumber||0,employeeId:document.getElementById("aeId").value,
+        employeeName:document.getElementById("aeName").value,designation:document.getElementById("aeDes").value,
+        vehicle:document.getElementById("aeVehicle").value,equipment:document.getElementById("aeEquipment").value,
+        plateAssetNo:document.getElementById("aePlate").value,location:document.getElementById("aeLoc").value,
+        supervisorId:document.getElementById("aeSup").value,status:document.getElementById("aeStatus").value,
+        assignedDate:document.getElementById("aeDate").value,remarks:document.getElementById("aeRemarks").value
+      }})); await adminLoadEquipment();
+    }else if(adminEditType==="attendance"){
+      await apiPost(adminAuthPayload({action:"adminUpdateAttendance",rowNumber:adminEditData.rowNumber,
+        workStatus:document.getElementById("aaStatus").value,otHours:document.getElementById("aaOT").value,
+        location:document.getElementById("aaLoc").value,supervisorComment:document.getElementById("aaComment").value
+      })); await adminLoadAttendance();
+    }
+    adminCloseEdit(); adminNotice("Saved successfully.","ok"); await adminLoadDashboard();
+  }catch(e){alert(e.message);}
+}
+
+function csvEscape(v){
+  const s=String(v??"");
+  return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;
+}
+function downloadCsv(name,rows){
+  if(!rows.length)return alert("No data loaded.");
+  const keys=Object.keys(rows[0]).filter(k=>k!=="rowNumber"&&k!=="pin");
+  const csv=[keys.join(","),...rows.map(r=>keys.map(k=>csvEscape(r[k])).join(","))].join("\r\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function adminDownload(type){
+  if(type==="workers"){if(!adminWorkers.length)await adminLoadWorkers();downloadCsv("Employees.csv",adminWorkers);}
+  if(type==="supervisors"){if(!adminSupervisors.length)await adminLoadSupervisors();downloadCsv("Users.csv",adminSupervisors.map(x=>({...x,pin:""})));}
+  if(type==="equipment"){if(!adminEquipment.length)await adminLoadEquipment();downloadCsv("Equipment.csv",adminEquipment);}
+  if(type==="attendance"){if(!adminAttendance.length)await adminLoadAttendance();downloadCsv("Attendance.csv",adminAttendance);}
+  if(type==="approvals"){if(!adminApprovals.length)await adminLoadApprovals();downloadCsv("Daily_Approvals.csv",adminApprovals);}
+}
+
 
 /* =========================================================
    NAVIGATION / SETTINGS / UTILITIES
