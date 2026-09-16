@@ -718,6 +718,34 @@
       .master-info-strip{grid-template-columns:1fr 1fr}
     }
 
+
+    /* ===== SPEED / CONNECTION ===== */
+    .speed-status{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:5px 9px;border-radius:999px;
+      background:#eef6ff;color:#24558d;
+      font-size:10px;font-weight:900
+    }
+    .speed-dot{width:7px;height:7px;border-radius:50%;background:#22c55e}
+    .speed-dot.sync{background:#f59e0b}
+    .speed-dot.slow{background:#ef4444}
+    .loading-timeout{
+      padding:16px;border:1px solid #fed7aa;background:#fff7ed;
+      border-radius:12px;color:#9a3412;font-size:12px
+    }
+
+
+    .pager{
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      margin:12px 0 2px;flex-wrap:wrap
+    }
+    .pager .btn{min-height:34px;padding:6px 10px}
+    .pager-info{font-size:11px;color:#64748b;font-weight:800}
+    .soft-fail{
+      padding:12px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;
+      color:#9a3412;font-size:12px
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1208,9 +1236,14 @@
               </div>
             </div>
             <div class="admin-toolbar">
-              <input id="adminSheetSearch" placeholder="Search this sheet..." oninput="adminRenderCurrentSheet()">
+              <input id="adminSheetSearch" placeholder="Search this sheet..." oninput="adminSheetSearchDebounced()">
             </div>
             <div id="adminSheetTable"></div>
+            <div id="adminSheetPager" class="pager hidden">
+              <button class="btn btn-soft" onclick="adminChangeSheetPage(-1)">← Previous</button>
+              <span id="adminSheetPageInfo" class="pager-info"></span>
+              <button class="btn btn-soft" onclick="adminChangeSheetPage(1)">Next →</button>
+            </div>
           </div>
         </div>
 
@@ -1427,6 +1460,15 @@ let adminApprovals = [];
 let companyMasterRows = [];
 let companyMasterSearchTimer = null;
 let selectedMasterEmployee = null;
+const activeApiRequests = new Map();
+let lastApiSuccessAt = 0;
+let adminSheetPage = 1;
+let adminSheetPageSize = 50;
+let adminSheetTotalPages = 1;
+let adminSheetTotalRows = 0;
+let adminSheetSearchTimer = null;
+let cmApprovalPage = 1;
+let cmApprovalTotalPages = 1;
 let adminSheetList = [];
 let adminCurrentSheetName = "";
 let adminCurrentSheetHeaders = [];
@@ -1537,105 +1579,120 @@ async function apiPost(payload, options={}){
     throw new Error("Web App API URL is not configured.");
   }
 
-  const maxAttempts = options.noRetry ? 1 : 3;
-  let lastError = null;
+  // Prevent duplicate GET/load-style requests from the UI.
+  const readOnlyActions = new Set([
+    "getSupervisorDailyBundle","getWorkers","getTodayAttendance",
+    "getEquipmentAssignments","getMonthlyAttendance","getCMApprovals",
+    "getAllWorkers","getAllSupervisors","adminGetDashboardFast",
+    "adminGetCompanyMaster","adminGetWorkers","adminGetSupervisors",
+    "adminGetEquipment","adminGetAttendance","adminGetApprovals",
+    "adminListSheets","adminGetSheetData","adminGetSheetPage","getCMApprovalsPage"
+  ]);
 
-  for(let attempt=1; attempt<=maxAttempts; attempt++){
-    const controller = new AbortController();
-    const timeoutMs = attempt === 1 ? 15000 : 22000;
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const requestKey = readOnlyActions.has(payload.action)
+    ? JSON.stringify(payload)
+    : "";
 
-    try{
-      // Cache-busting query helps avoid occasional stale/intermediate Google responses.
-      const separator = API_URL.includes("?") ? "&" : "?";
-      const requestUrl = `${API_URL}${separator}_t=${Date.now()}_${attempt}`;
+  if(requestKey && activeApiRequests.has(requestKey)){
+    return activeApiRequests.get(requestKey);
+  }
 
-      const res = await fetch(requestUrl,{
-        method:"POST",
-        redirect:"follow",
-        cache:"no-store",
-        headers:{
-          "Content-Type":"text/plain;charset=utf-8",
-          "Accept":"application/json,text/plain,*/*"
-        },
-        body:JSON.stringify(payload),
-        signal:controller.signal
-      });
+  const run = (async()=>{
+    // Two attempts only. This avoids a page appearing to load forever.
+    const maxAttempts = options.noRetry ? 1 : 2;
+    let lastError = null;
 
-      clearTimeout(timer);
+    for(let attempt=1; attempt<=maxAttempts; attempt++){
+      const controller = new AbortController();
+      const timeoutMs = attempt === 1 ? 12000 : 18000;
+      const timer = setTimeout(()=>controller.abort(), timeoutMs);
 
-      const responseText = await res.text();
-
-      if(!res.ok){
-        throw new Error(`Google service returned HTTP ${res.status}.`);
-      }
-
-      let data;
       try{
-        data = JSON.parse(responseText);
-      }catch{
-        const looksLikeGoogleHtml =
-          /<!doctype html|<html|accounts\.google|service unavailable|temporarily unavailable/i
-            .test(responseText || "");
+        const separator = API_URL.includes("?") ? "&" : "?";
+        const requestUrl = `${API_URL}${separator}_t=${Date.now()}_${attempt}`;
 
-        if(looksLikeGoogleHtml){
-          throw new Error("Google Apps Script is temporarily unavailable.");
+        const res = await fetch(requestUrl,{
+          method:"POST",
+          redirect:"follow",
+          cache:"no-store",
+          headers:{
+            "Content-Type":"text/plain;charset=utf-8",
+            "Accept":"application/json,text/plain,*/*"
+          },
+          body:JSON.stringify(payload),
+          signal:controller.signal
+        });
+
+        clearTimeout(timer);
+        const responseText = await res.text();
+
+        if(!res.ok){
+          throw new Error(`Google service returned HTTP ${res.status}.`);
         }
 
-        throw new Error("The server returned a temporary invalid response.");
-      }
+        let data;
+        try{
+          data=JSON.parse(responseText);
+        }catch{
+          if(/<!doctype html|<html|accounts\.google|service unavailable|temporarily unavailable/i.test(responseText||"")){
+            throw new Error("Google Apps Script is temporarily unavailable.");
+          }
+          throw new Error("The server returned a temporary invalid response.");
+        }
 
-      if(!data || typeof data !== "object"){
-        throw new Error("The server returned an empty response.");
-      }
+        if(!data || typeof data!=="object"){
+          throw new Error("The server returned an empty response.");
+        }
 
-      if(!data.success){
-        // Business/data errors should not be retried repeatedly.
-        throw Object.assign(
-          new Error(data.message || "Request failed."),
-          {doNotRetry:true}
-        );
-      }
+        if(!data.success){
+          throw Object.assign(
+            new Error(data.message || "Request failed."),
+            {doNotRetry:true}
+          );
+        }
 
-      return data;
+        lastApiSuccessAt=Date.now();
+        return data;
 
-    }catch(err){
-      clearTimeout(timer);
+      }catch(err){
+        clearTimeout(timer);
+        lastError = err?.name==="AbortError"
+          ? new Error("Google Apps Script is taking too long to respond.")
+          : err;
 
-      if(err?.name === "AbortError"){
-        lastError = new Error("Google Apps Script is taking too long to respond.");
-      }else{
-        lastError = err;
-      }
+        if(lastError?.doNotRetry) throw lastError;
 
-      if(lastError?.doNotRetry){
-        throw lastError;
-      }
-
-      // Retry transient Google/network/invalid-response failures.
-      if(attempt < maxAttempts){
-        await new Promise(resolve => setTimeout(resolve, 700 * attempt));
-        continue;
+        if(attempt<maxAttempts){
+          await new Promise(resolve=>setTimeout(resolve,650));
+        }
       }
     }
-  }
 
-  if(options.queueIfOffline &&
-     (!navigator.onLine || /fetch|network|unavailable|too long|invalid response|temporary/i.test(lastError?.message || ""))){
-    queueOffline(payload);
-    return {success:true, queued:true, message:"Saved offline and queued for sync."};
-  }
+    if(options.queueIfOffline &&
+       (!navigator.onLine || /fetch|network|unavailable|too long|invalid response|temporary/i.test(lastError?.message||""))){
+      queueOffline(payload);
+      return {success:true,queued:true,message:"Saved offline and queued for sync."};
+    }
 
-  throw new Error(
-    "Google connection is temporarily slow. Please wait a few seconds and tap Refresh/Login again."
-  );
+    throw new Error(
+      "Google is responding slowly. Saved data is still available. Tap Refresh to try again."
+    );
+  })();
+
+  if(requestKey) activeApiRequests.set(requestKey,run);
+
+  try{
+    return await run;
+  }finally{
+    if(requestKey) activeApiRequests.delete(requestKey);
+  }
 }
 
 /* =========================================================
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v35";
+const CACHE_VERSION = "v37";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -2118,28 +2175,18 @@ async function loadCrewAndToday(options={}){
       setDailySyncStatus("syncing", "Syncing with Google...");
     }
 
-    const [crewData, attendanceData, equipmentData] = await Promise.all([
-      apiPost({
-        action:"getWorkers",
-        supervisorId:currentSupervisor.supervisorId,
-        date:dateStr
-      }),
-      apiPost({
-        action:"getTodayAttendance",
-        supervisorId:currentSupervisor.supervisorId,
-        date:dateStr
-      }),
-      apiPost({
-        action:"getEquipmentAssignments",
-        supervisorId:currentSupervisor.supervisorId
-      })
-    ]);
+    // One bundled API call instead of 3 concurrent Google calls.
+    const bundle = await apiPost({
+      action:"getSupervisorDailyBundle",
+      supervisorId:currentSupervisor.supervisorId,
+      date:dateStr
+    });
 
-    workers = crewData.workers || [];
-    todayAttendance = attendanceData.records || [];
-    equipmentAssignments = equipmentData.assignments || [];
-    selectedDayCMStatus = attendanceData.cmStatus || "";
-    selectedDayCMRemark = attendanceData.cmRemark || "";
+    workers = bundle.workers || [];
+    todayAttendance = bundle.attendance || [];
+    equipmentAssignments = bundle.equipment || [];
+    selectedDayCMStatus = bundle.cmStatus || "";
+    selectedDayCMRemark = bundle.cmRemark || "";
 
     setFastCache(key, {
       workers,
@@ -3936,7 +3983,7 @@ function adminShowTab(name,btn){
 
 async function adminLoadDashboard(){
   try{
-    const d=await apiPost(adminAuthPayload({action:"adminGetDashboard"}));
+    const d=await apiPost(adminAuthPayload({action:"adminGetDashboardFast"}));
     const x=d.dashboard||{};
     const stats=[
       ["Active Employees",x.activeWorkers||0],["All Employee Rows",x.workerRows||0],
@@ -3981,7 +4028,7 @@ async function adminLoadCompanyMaster(){
       action:"adminGetCompanyMaster",
       search:q,
       status,
-      limit:250
+      limit:50
     }));
 
     companyMasterRows=d.employees||[];
@@ -4283,8 +4330,22 @@ async function adminDeleteAttendance(row){
 }
 
 async function adminLoadApprovals(){
-  try{const d=await apiPost(adminAuthPayload({action:"adminGetApprovals"}));adminApprovals=d.approvals||[];adminRenderApprovals();}
-  catch(e){adminNotice(e.message,"err");}
+  const box=document.getElementById("adminApprovalsTable");
+  if(box) box.innerHTML=`<div class="sheet-empty"><div class="spinner"></div> Loading approvals...</div>`;
+  try{
+    const d=await apiPost(adminAuthPayload({
+      action:"getCMApprovalsPage",
+      page:cmApprovalPage,
+      pageSize:50,
+      status:"all"
+    }));
+    adminApprovals=d.approvals||[];
+    cmApprovalPage=Number(d.page||1);
+    cmApprovalTotalPages=Number(d.totalPages||1);
+    adminRenderApprovals();
+  }catch(e){
+    if(box) box.innerHTML=`<div class="soft-fail">${escapeHtml(e.message)}<br><button class="btn btn-soft" style="margin-top:8px" onclick="adminLoadApprovals()">Try Again</button></div>`;
+  }
 }
 function adminRenderApprovals(){
   const rows=adminApprovals.map(a=>{
@@ -4295,7 +4356,16 @@ function adminRenderApprovals(){
         : `<span class="small muted">Locked</span>`
     }</td></tr>`;
   }).join("");
-  document.getElementById("adminApprovalsTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Supervisor</th><th>Workers</th><th>OT</th><th>Status</th><th>Remark</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="7">No approvals found.</td></tr>`}</tbody></table></div>`;
+  document.getElementById("adminApprovalsTable").innerHTML=`<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Supervisor</th><th>Workers</th><th>OT</th><th>Status</th><th>Remark</th><th>Actions</th></tr></thead><tbody>${rows||`<tr><td colspan="7">No approvals found.</td></tr>`}</tbody></table></div>${
+    cmApprovalTotalPages>1 ? `<div class="pager"><button class="btn btn-soft" onclick="adminChangeApprovalPage(-1)">← Previous</button><span class="pager-info">Page ${cmApprovalPage} of ${cmApprovalTotalPages}</span><button class="btn btn-soft" onclick="adminChangeApprovalPage(1)">Next →</button></div>` : ""
+  }`;
+}
+
+function adminChangeApprovalPage(delta){
+  const next=Math.max(1,Math.min(cmApprovalTotalPages,cmApprovalPage+delta));
+  if(next===cmApprovalPage)return;
+  cmApprovalPage=next;
+  adminLoadApprovals();
 }
 async function adminHandleApproval(id,decision){
   const remark=prompt("Admin remark (optional):","")||"";
@@ -4373,42 +4443,77 @@ async function adminLoadSheetList(){
 
 async function adminOpenSheet(name){
   adminCurrentSheetName=name;
+  adminSheetPage=1;
+  const search=document.getElementById("adminSheetSearch");
+  if(search) search.value="";
   await adminLoadSheetList();
   document.getElementById("adminSheetManager").classList.remove("hidden");
   document.getElementById("adminSheetManagerName").textContent=name;
   await adminReloadCurrentSheet();
 }
 
+function adminSheetSearchDebounced(){
+  clearTimeout(adminSheetSearchTimer);
+  adminSheetSearchTimer=setTimeout(()=>{
+    adminSheetPage=1;
+    adminReloadCurrentSheet();
+  },350);
+}
+
 async function adminReloadCurrentSheet(){
   if(!adminCurrentSheetName)return;
+
   const box=document.getElementById("adminSheetTable");
-  box.innerHTML=`<div class="sheet-empty">Loading ${escapeHtml(adminCurrentSheetName)}...</div>`;
+  const pager=document.getElementById("adminSheetPager");
+  box.innerHTML=`<div class="sheet-empty"><div class="spinner"></div> Loading ${escapeHtml(adminCurrentSheetName)}...</div>`;
+  pager.classList.add("hidden");
+
   try{
-    const d=await apiPost(adminAuthPayload({action:"adminGetSheetData",sheetName:adminCurrentSheetName}));
+    const search=document.getElementById("adminSheetSearch")?.value||"";
+    const d=await apiPost(adminAuthPayload({
+      action:"adminGetSheetPage",
+      sheetName:adminCurrentSheetName,
+      page:adminSheetPage,
+      pageSize:adminSheetPageSize,
+      search
+    }));
+
     adminCurrentSheetHeaders=d.headers||[];
     adminCurrentSheetRows=d.rows||[];
+    adminSheetPage=Number(d.page||1);
+    adminSheetTotalPages=Number(d.totalPages||1);
+    adminSheetTotalRows=Number(d.totalRows||0);
+
     document.getElementById("adminSheetManagerMeta").textContent=
-      `${adminCurrentSheetRows.length} rows • ${adminCurrentSheetHeaders.length} columns`;
+      `${adminSheetTotalRows} rows • showing max ${adminSheetPageSize} per page`;
+
     adminRenderCurrentSheet();
+
+    if(adminSheetTotalPages>1){
+      pager.classList.remove("hidden");
+      document.getElementById("adminSheetPageInfo").textContent=
+        `Page ${adminSheetPage} of ${adminSheetTotalPages}`;
+    }
   }catch(e){
-    box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;
+    box.innerHTML=`<div class="soft-fail">${escapeHtml(e.message)}<br><button class="btn btn-soft" style="margin-top:8px" onclick="adminReloadCurrentSheet()">Try Again</button></div>`;
   }
 }
 
-function adminRenderCurrentSheet(){
-  const q=(document.getElementById("adminSheetSearch")?.value||"").toLowerCase();
-  const rows=adminCurrentSheetRows.filter(r=>{
-    const hay=adminCurrentSheetHeaders.map(h=>String(r.values?.[h]??"")).join(" ").toLowerCase();
-    return !q||hay.includes(q);
-  });
+function adminChangeSheetPage(delta){
+  const next=Math.max(1,Math.min(adminSheetTotalPages,adminSheetPage+delta));
+  if(next===adminSheetPage)return;
+  adminSheetPage=next;
+  adminReloadCurrentSheet();
+}
 
+function adminRenderCurrentSheet(){
   if(!adminCurrentSheetHeaders.length){
     document.getElementById("adminSheetTable").innerHTML=`<div class="sheet-empty">No headers found.</div>`;
     return;
   }
 
   const head=adminCurrentSheetHeaders.map(h=>`<th>${escapeHtml(h)}</th>`).join("")+`<th>Actions</th>`;
-  const body=rows.map(r=>`<tr>${
+  const body=adminCurrentSheetRows.map(r=>`<tr>${
     adminCurrentSheetHeaders.map(h=>`<td>${escapeHtml(String(r.values?.[h]??""))}</td>`).join("")
   }<td class="admin-actions">
     <button class="btn btn-soft" onclick="adminOpenSheetRow(${r.rowNumber})">Edit</button>
