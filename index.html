@@ -690,10 +690,39 @@
     .day-review-banner.rejected{background:#fff1f2;color:#9f1239;border:1px solid #fecdd3}
     .cm-locked-note{padding:10px 12px;border-radius:10px;background:#f1f5f9;color:#475569;font-size:12px;font-weight:800;margin-top:10px}
 
+
+    /* ===== COMPANY MASTER ===== */
+    .master-info-strip{
+      display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 0 14px
+    }
+    .master-info-strip>div{
+      border:1px solid #dbe5f2;background:#f8fbff;border-radius:12px;padding:12px
+    }
+    .master-info-strip b{display:block;color:#123a6b;font-size:14px;margin-bottom:4px}
+    .master-info-strip span{font-size:10px;color:#64748b;font-weight:700}
+    .master-import-progress{
+      margin:10px 0;padding:12px;border:1px solid #bfdbfe;background:#eff6ff;
+      color:#1d4ed8;border-radius:11px;font-size:12px;font-weight:800
+    }
+    .master-result-name{font-weight:900;color:#152a45}
+    .master-result-sub{font-size:10px;color:#64748b;margin-top:2px}
+    .master-add-btn{min-width:105px}
+    .master-project-box{
+      padding:12px;border-radius:12px;border:1px solid #dbe5f2;background:#f8fbff;margin-bottom:12px
+    }
+    .master-project-person{
+      display:flex;justify-content:space-between;gap:12px;align-items:flex-start
+    }
+    .master-project-person strong{font-size:16px;color:#123a6b}
+    @media(max-width:700px){
+      .master-info-strip{grid-template-columns:1fr 1fr}
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 </head>
 <body>
@@ -1061,6 +1090,7 @@
         <div class="admin-tabs">
           <button class="btn btn-primary" onclick="adminShowTab('dashboard',this)">Dashboard</button>
           <button class="btn btn-soft" onclick="adminShowTab('workers',this)">Employees</button>
+          <button class="btn btn-soft" onclick="adminShowTab('master',this)">Company Master</button>
           <button class="btn btn-soft" onclick="adminShowTab('supervisors',this)">Users</button>
           <button class="btn btn-soft" onclick="adminShowTab('equipment',this)">Vehicles / Equipment</button>
           <button class="btn btn-soft" onclick="adminShowTab('attendance',this)">Attendance</button>
@@ -1087,7 +1117,47 @@
           <div id="adminWorkersTable"></div>
         </div>
 
-        <div id="adminTabSupervisors" class="hidden">
+        
+        <div id="adminTabMaster" class="hidden">
+          <div class="admin-section-title">
+            <div>
+              <h3 style="margin:0">Company Master List</h3>
+              <div class="small muted" style="margin-top:4px">
+                Company-wide employee database. Upload the HR master Excel, then add project manpower by HPEG number.
+              </div>
+            </div>
+            <label class="btn btn-primary" style="cursor:pointer">
+              ↑ Upload Master Excel
+              <input id="companyMasterFile" type="file" accept=".xlsx,.xls" hidden onchange="adminImportCompanyMaster(this)">
+            </label>
+          </div>
+
+          <div class="master-info-strip">
+            <div><b id="companyMasterTotal">0</b><span>Company Employees</span></div>
+            <div><b>Employee ID</b><span>Unique Key</span></div>
+            <div><b>Designation</b><span>Also used as Trade</span></div>
+            <div><b>Workers</b><span>DMT Sea Palace only</span></div>
+          </div>
+
+          <div id="companyMasterImportStatus"></div>
+
+          <div class="admin-toolbar">
+            <input id="companyMasterSearch" placeholder="Type HPEG number, employee name or designation..."
+                   oninput="adminMasterSearchDebounced()">
+            <select id="companyMasterStatus" onchange="adminLoadCompanyMaster()">
+              <option value="all">All Status</option>
+              <option value="active" selected>Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <button class="btn btn-soft" onclick="adminLoadCompanyMaster()">Search</button>
+          </div>
+
+          <div id="companyMasterTable">
+            <div class="sheet-empty">Upload the Company Master Excel or search existing master data.</div>
+          </div>
+        </div>
+
+<div id="adminTabSupervisors" class="hidden">
           <div class="admin-section-title"><h3 style="margin:0">Supervisor / CM Accounts</h3><button class="btn btn-primary" onclick="adminOpenSupervisor()">+ Add User</button></div>
           <div id="adminSupervisorsTable"></div>
         </div>
@@ -1354,6 +1424,9 @@ let adminSupervisors = [];
 let adminEquipment = [];
 let adminAttendance = [];
 let adminApprovals = [];
+let companyMasterRows = [];
+let companyMasterSearchTimer = null;
+let selectedMasterEmployee = null;
 let adminSheetList = [];
 let adminCurrentSheetName = "";
 let adminCurrentSheetHeaders = [];
@@ -1562,7 +1635,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v34";
+const CACHE_VERSION = "v35";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -3836,7 +3909,7 @@ function adminNotice(message,type="ok"){
 }
 
 function adminShowTab(name,btn){
-  ["Dashboard","Workers","Supervisors","Equipment","Attendance","Approvals","Sheets","Downloads"].forEach(x=>{
+  ["Dashboard","Workers","Master","Supervisors","Equipment","Attendance","Approvals","Sheets","Downloads"].forEach(x=>{
     const el=document.getElementById("adminTab"+x);
     if(el) el.classList.toggle("hidden",x.toLowerCase()!==name.toLowerCase());
   });
@@ -3846,6 +3919,7 @@ function adminShowTab(name,btn){
   if(btn){btn.classList.remove("btn-soft");btn.classList.add("btn-primary");}
 
   if(name==="workers") adminLoadWorkers();
+  if(name==="master") adminLoadCompanyMaster();
   if(name==="supervisors") adminLoadSupervisors();
   if(name==="equipment") adminLoadEquipment();
   if(name==="attendance"){
@@ -3887,6 +3961,215 @@ async function adminSystemTest(){
     }</div>`;
   }catch(e){box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;}
 }
+
+
+function adminMasterSearchDebounced(){
+  clearTimeout(companyMasterSearchTimer);
+  companyMasterSearchTimer=setTimeout(adminLoadCompanyMaster,300);
+}
+
+async function adminLoadCompanyMaster(){
+  const q=document.getElementById("companyMasterSearch")?.value||"";
+  const status=document.getElementById("companyMasterStatus")?.value||"active";
+  const box=document.getElementById("companyMasterTable");
+  if(!box)return;
+
+  box.innerHTML=`<div class="sheet-empty">Loading company employees...</div>`;
+
+  try{
+    const d=await apiPost(adminAuthPayload({
+      action:"adminGetCompanyMaster",
+      search:q,
+      status,
+      limit:250
+    }));
+
+    companyMasterRows=d.employees||[];
+    document.getElementById("companyMasterTotal").textContent=String(d.total||0);
+    adminRenderCompanyMaster();
+  }catch(e){
+    box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function adminRenderCompanyMaster(){
+  const box=document.getElementById("companyMasterTable");
+  if(!box)return;
+
+  const rows=companyMasterRows.map(m=>`<tr>
+    <td>${escapeHtml(m.employeeId)}</td>
+    <td>
+      <div class="master-result-name">${escapeHtml(m.employeeName)}</div>
+      <div class="master-result-sub">${escapeHtml(m.projectCode||"")} ${m.project?"• "+escapeHtml(m.project):""}</div>
+    </td>
+    <td>${escapeHtml(m.designation)}</td>
+    <td>${escapeHtml(m.status)}</td>
+    <td class="admin-actions">
+      <button class="btn btn-primary master-add-btn"
+        onclick='adminOpenMasterAdd(${JSON.stringify(m.rowNumber)})'>+ Add to Project</button>
+    </td>
+  </tr>`).join("");
+
+  box.innerHTML=`<div class="admin-table-wrap">
+    <table class="admin-table" style="min-width:820px">
+      <thead><tr>
+        <th>Employee ID</th><th>Employee Name</th><th>Designation / Trade</th><th>Company Status</th><th>Action</th>
+      </tr></thead>
+      <tbody>${rows||`<tr><td colspan="5">No matching company employees.</td></tr>`}</tbody>
+    </table>
+  </div>`;
+}
+
+async function adminImportCompanyMaster(input){
+  const file=input.files?.[0];
+  if(!file)return;
+
+  if(!window.XLSX){
+    alert("Excel reader did not load. Please refresh the page and try again.");
+    input.value="";
+    return;
+  }
+
+  if(!confirm(
+    `Replace the existing Company Master with "${file.name}"?\n\n`+
+    `This only replaces the Company Master reference list. Project Workers and historical Attendance are not deleted.`
+  )){
+    input.value="";
+    return;
+  }
+
+  const statusBox=document.getElementById("companyMasterImportStatus");
+  statusBox.innerHTML=`<div class="master-import-progress">Reading ${escapeHtml(file.name)}...</div>`;
+
+  try{
+    const buffer=await file.arrayBuffer();
+    const workbook=XLSX.read(buffer,{type:"array",cellDates:false});
+    const ws=workbook.Sheets[workbook.SheetNames[0]];
+    const raw=XLSX.utils.sheet_to_json(ws,{defval:"",raw:false});
+
+    if(!raw.length)throw new Error("The uploaded Excel has no employee rows.");
+
+    const normalizeKey=s=>String(s||"").trim().toLowerCase().replace(/\s+/g," ");
+    const mapped=raw.map((r,index)=>{
+      const map={};
+      Object.keys(r).forEach(k=>map[normalizeKey(k)]=r[k]);
+
+      return {
+        sn:map["sn"]||index+1,
+        employeeId:String(map["employee id"]||"").trim(),
+        employeeName:String(map["employee name"]||"").trim(),
+        projectCode:String(map["project code"]||"").trim(),
+        project:String(map["project"]||"").trim(),
+        status:String(map["status"]||"").trim(),
+        designation:String(map["designation"]||"").trim()
+      };
+    }).filter(r=>r.employeeId);
+
+    if(!mapped.length){
+      throw new Error(
+        "Employee ID column was not found. Expected columns: SN, Employee ID, Employee Name, Project Code, Project, Status, Designation."
+      );
+    }
+
+    await apiPost(adminAuthPayload({
+      action:"adminMasterBeginImport",
+      fileName:file.name
+    }));
+
+    const chunkSize=250;
+    let imported=0;
+
+    for(let i=0;i<mapped.length;i+=chunkSize){
+      const chunk=mapped.slice(i,i+chunkSize);
+      const d=await apiPost(adminAuthPayload({
+        action:"adminMasterImportChunk",
+        rows:chunk
+      }));
+      imported += Number(d.imported||0);
+      const pct=Math.min(100,Math.round((i+chunk.length)/mapped.length*100));
+      statusBox.innerHTML=`<div class="master-import-progress">Importing Company Master... ${pct}% • ${imported} employees</div>`;
+    }
+
+    const done=await apiPost(adminAuthPayload({
+      action:"adminMasterFinishImport"
+    }));
+
+    statusBox.innerHTML=`<div class="notice ok">✓ ${escapeHtml(done.message)} ${done.rows} unique employees loaded.</div>`;
+    document.getElementById("companyMasterSearch").value="";
+    document.getElementById("companyMasterStatus").value="active";
+    await adminLoadCompanyMaster();
+
+  }catch(e){
+    statusBox.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;
+  }finally{
+    input.value="";
+  }
+}
+
+function adminOpenMasterAdd(rowNumber){
+  const m=companyMasterRows.find(x=>Number(x.rowNumber)===Number(rowNumber));
+  if(!m)return;
+
+  selectedMasterEmployee=m;
+  adminEditType="masterAdd";
+  adminEditData=m;
+
+  adminOpenEdit("Add Company Employee to Project",`
+    <div class="master-project-box">
+      <div class="master-project-person">
+        <div>
+          <strong>${escapeHtml(m.employeeId)} — ${escapeHtml(m.employeeName)}</strong>
+          <div class="small muted" style="margin-top:5px">
+            ${escapeHtml(m.designation)} • Company Status: ${escapeHtml(m.status)}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal-grid">
+      ${adminField("Supervisor ID","amSup","SUP001")}
+      ${adminField("Location","amLoc","Site")}
+      ${adminField("Project","amProj","DMT-25221")}
+      ${adminField("Joining Date","amJoin",getTodayISO(),"date")}
+      <div class="field">
+        <label>OT Eligible</label>
+        <select id="amOT">
+          <option value="Yes" selected>Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Designation / Trade</label>
+        <input value="${escapeHtml(m.designation)}" disabled>
+        <div class="small muted" style="margin-top:4px">Automatically taken from Company Master.</div>
+      </div>
+    </div>
+  `);
+}
+
+async function adminSaveMasterAdd(){
+  const m=selectedMasterEmployee;
+  if(!m)throw new Error("Company employee is not selected.");
+
+  const d=await apiPost(adminAuthPayload({
+    action:"adminAddMasterEmployeeToProject",
+    masterEmployee:{
+      employeeId:m.employeeId,
+      supervisorId:document.getElementById("amSup").value,
+      location:document.getElementById("amLoc").value,
+      project:document.getElementById("amProj").value,
+      joiningDate:document.getElementById("amJoin").value,
+      otEligible:document.getElementById("amOT").value
+    }
+  }));
+
+  adminCloseEdit();
+  selectedMasterEmployee=null;
+  adminNotice(d.message,"ok");
+  await adminLoadWorkers();
+  await adminLoadDashboard();
+}
+
 
 async function adminLoadWorkers(){
   try{const d=await apiPost(adminAuthPayload({action:"adminGetWorkers"}));adminWorkers=d.workers||[];adminRenderWorkers();}
@@ -4032,7 +4315,10 @@ function adminCloseEdit(){document.getElementById("adminEditModal").classList.ad
 
 async function adminSaveEdit(){
   try{
-    if(adminEditType==="worker"){
+    if(adminEditType==="masterAdd"){
+      await adminSaveMasterAdd();
+      return;
+    }else if(adminEditType==="worker"){
       await apiPost(adminAuthPayload({action:"adminSaveWorker",worker:{
         workerId:document.getElementById("awId").value,workerName:document.getElementById("awName").value,
         designation:document.getElementById("awDes").value,trade:document.getElementById("awTrade").value,
