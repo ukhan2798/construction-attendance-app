@@ -1425,7 +1425,7 @@
 
 </head>
 <body>
-<div class="build-badge">v45 • Fast Login + Correction</div>
+<div class="build-badge">v46 • Instant Login</div>
 <div class="app">
 
   <aside id="desktopSidebar" class="desktop-sidebar hidden">
@@ -1472,12 +1472,12 @@
         </p>
 
         <div id="loginNotice"></div>
-        <div class="login-speed-note">⚡ Saved user list loads instantly; Google refreshes quietly in the background.</div>
+        <div class="login-speed-note">⚡ Login users are available instantly. Google refreshes quietly after the page opens.</div>
 
         <div class="field">
           <label>User</label>
           <select id="loginSupervisor">
-            <option value="">Loading supervisors...</option>
+            <option value="SUP001">Site Supervisor (SUP001)</option><option value="CM001">Eng Bilal (CM001)</option><option value="ADMIN">System Administrator (ADMIN)</option>
           </select>
         </div>
 
@@ -2258,7 +2258,7 @@ async function init(){
         throw new Error("Saved supervisor session is invalid.");
       }
 
-      loadSupervisors({silent:true});
+      renderInstantLoginUsers(); setTimeout(()=>loadSupervisors({silent:true}),2000);
 
       if(isAdminUser()){
         adminPin = sessionStorage.getItem("attendance_admin_pin") || "1334";
@@ -2285,7 +2285,7 @@ async function init(){
     }
   }
 
-  loadSupervisors();
+  renderInstantLoginUsers(); setTimeout(()=>loadSupervisors({silent:true}),2000);
 }
 
 function getTodayISO(){
@@ -2440,7 +2440,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v45";
+const CACHE_VERSION = "v46";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -2493,6 +2493,25 @@ function setDailySyncStatus(mode, textValue){
 /* =========================================================
    LOGIN
 ========================================================= */
+
+
+const BUILTIN_LOGIN_USERS = [
+  {supervisorId:"SUP001", supervisorName:"Site Supervisor", project:"DMT-25221", role:"Supervisor"},
+  {supervisorId:"CM001", supervisorName:"Eng Bilal", project:"DMT-25221", role:"CM"},
+  {supervisorId:"ADMIN", supervisorName:"System Administrator", project:"DMT-25221", role:"Admin"}
+];
+
+function renderInstantLoginUsers(){
+  const select=document.getElementById("loginSupervisor");
+  if(!select) return;
+
+  let list=getPersistentSupervisorCache();
+  if(!Array.isArray(list) || !list.length){
+    list=BUILTIN_LOGIN_USERS;
+  }
+
+  renderSupervisorOptions(list);
+}
 
 function getPersistentSupervisorCache(){
   const fixedKey="attendance_supervisors_persistent_v1";
@@ -2553,25 +2572,16 @@ function renderSupervisorOptions(list, loadingText=false){
       ).join("");
     populateTransferSupervisors();
   }else if(loadingText){
-    select.innerHTML=`<option value="">Loading supervisors...</option>`;
+    select.innerHTML=`<option value="SUP001">Site Supervisor (SUP001)</option><option value="CM001">Eng Bilal (CM001)</option><option value="ADMIN">System Administrator (ADMIN)</option>`;
   }
 }
 
 async function loadSupervisors(options={}){
-  const silent=!!options.silent;
-  const select=document.getElementById("loginSupervisor");
+  // Login must never wait for Google.
+  renderInstantLoginUsers();
 
-  // 1) Show saved users immediately, even after app version updates.
-  const cached=getPersistentSupervisorCache();
-  if(cached?.length){
-    renderSupervisorOptions(cached);
-  }else if(!silent){
-    renderSupervisorOptions([],true);
-  }
-
-  // 2) Refresh from Google quietly in the background.
   try{
-    const data=await apiPost({action:"getSupervisors"},{noRetry:false});
+    const data=await apiPost({action:"getSupervisors"},{noRetry:true});
     const fresh=(data.supervisors||[]).filter(s=>s&&s.supervisorId);
 
     if(fresh.length){
@@ -2580,12 +2590,8 @@ async function loadSupervisors(options={}){
     }
     return fresh;
   }catch(err){
-    // Never replace a usable cached login list with an error.
-    if(!cached?.length && !silent){
-      select.innerHTML=`<option value="">Unable to load supervisors</option>`;
-      showNotice("loginNotice",err.message,"err");
-    }
-    return cached||[];
+    // Keep the already-visible saved/built-in list.
+    return getPersistentSupervisorCache() || BUILTIN_LOGIN_USERS;
   }
 }
 
