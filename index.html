@@ -746,6 +746,17 @@
       color:#9a3412;font-size:12px
     }
 
+
+    .corr-change{
+      display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap
+    }
+    .corr-old{padding:4px 7px;border-radius:7px;background:#f1f5f9;color:#475569;font-weight:800}
+    .corr-arrow{color:#64748b;font-weight:900}
+    .corr-new{padding:4px 7px;border-radius:7px;background:#eff6ff;color:#1d4ed8;font-weight:900}
+    .corr-reason{
+      max-width:280px;white-space:normal;line-height:1.3;color:#475569
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1291,6 +1302,29 @@
 
 
 <!-- CM DAY DETAIL MODAL -->
+
+      <div id="cmCorrectionPanel" class="hidden card" style="margin-top:12px">
+        <div class="section-title">
+          <div>
+            <h3 style="margin:0">Employee Correction Requests</h3>
+            <div class="small muted" style="margin-top:4px">
+              Only corrected employees are shown here. Original full-day approvals remain locked.
+            </div>
+          </div>
+          <div class="row wrap">
+            <select id="cmCorrectionStatusFilter" onchange="loadCMCorrections()" style="width:auto">
+              <option value="pending" selected>Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+            <button class="btn btn-soft" onclick="loadCMCorrections()">Refresh</button>
+            <button class="btn btn-soft" onclick="hideCMCorrections()">Close</button>
+          </div>
+        </div>
+        <div id="cmCorrectionTable"></div>
+      </div>
+
 <div class="modal hidden" id="cmDetailModal">
   <div class="modal-box" style="max-width:980px">
     <div class="modal-head">
@@ -1469,6 +1503,7 @@ let adminSheetTotalRows = 0;
 let adminSheetSearchTimer = null;
 let cmApprovalPage = 1;
 let cmApprovalTotalPages = 1;
+let cmCorrectionRows = [];
 let adminSheetList = [];
 let adminCurrentSheetName = "";
 let adminCurrentSheetHeaders = [];
@@ -1586,7 +1621,7 @@ async function apiPost(payload, options={}){
     "getAllWorkers","getAllSupervisors","adminGetDashboardFast",
     "adminGetCompanyMaster","adminGetWorkers","adminGetSupervisors",
     "adminGetEquipment","adminGetAttendance","adminGetApprovals",
-    "adminListSheets","adminGetSheetData","adminGetSheetPage","getCMApprovalsPage"
+    "adminListSheets","adminGetSheetData","adminGetSheetPage","getCMApprovalsPage","getCMCorrectionRequests"
   ]);
 
   const requestKey = readOnlyActions.has(payload.action)
@@ -1692,7 +1727,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v37";
+const CACHE_VERSION = "v38";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -1941,6 +1976,100 @@ function setCMFilter(status, btn){
     btn.classList.add("btn-primary");
   }
   loadCMApprovals();
+}
+
+
+function showCMCorrections(){
+  const panel=document.getElementById("cmCorrectionPanel");
+  if(panel) panel.classList.remove("hidden");
+  loadCMCorrections();
+}
+
+function hideCMCorrections(){
+  const panel=document.getElementById("cmCorrectionPanel");
+  if(panel) panel.classList.add("hidden");
+}
+
+async function loadCMCorrections(){
+  const box=document.getElementById("cmCorrectionTable");
+  if(!box || !currentSupervisor)return;
+
+  box.innerHTML=`<div class="empty"><div class="spinner"></div>Loading employee corrections...</div>`;
+
+  try{
+    const status=document.getElementById("cmCorrectionStatusFilter")?.value||"pending";
+    const d=await apiPost({
+      action:"getCMCorrectionRequests",
+      cmId:currentSupervisor.supervisorId,
+      status
+    });
+
+    cmCorrectionRows=d.corrections||[];
+    renderCMCorrections();
+  }catch(e){
+    box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function renderCMCorrections(){
+  const box=document.getElementById("cmCorrectionTable");
+  if(!box)return;
+
+  const rows=cmCorrectionRows.map(r=>{
+    const pending=String(r.cmStatus||"Pending").toLowerCase()==="pending";
+    return `<tr>
+      <td>${escapeHtml(r.date)}</td>
+      <td><b>${escapeHtml(r.workerId)}</b><br>${escapeHtml(r.workerName)}</td>
+      <td>${escapeHtml(r.supervisorId)}</td>
+      <td>
+        <div class="corr-change">
+          <span class="corr-old">${escapeHtml(r.currentStatus)} / OT ${Number(r.currentOT||0)}</span>
+          <span class="corr-arrow">→</span>
+          <span class="corr-new">${escapeHtml(r.requestedStatus)} / OT ${Number(r.requestedOT||0)}</span>
+        </div>
+      </td>
+      <td class="corr-reason">${escapeHtml(r.reason||"—")}</td>
+      <td>${escapeHtml(r.cmStatus||"Pending")}</td>
+      <td class="admin-actions">
+        ${pending ? `
+          <button class="btn btn-primary" onclick="cmHandleCorrection('${escapeHtml(r.requestId)}','approve')">Approve</button>
+          <button class="btn btn-danger" onclick="cmHandleCorrection('${escapeHtml(r.requestId)}','reject')">Reject</button>
+        ` : `<span class="small muted">Locked</span>`}
+      </td>
+    </tr>`;
+  }).join("");
+
+  box.innerHTML=`<div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr>
+        <th>Date</th><th>Employee</th><th>Supervisor</th>
+        <th>Correction</th><th>Reason</th><th>CM Status</th><th>Action</th>
+      </tr></thead>
+      <tbody>${rows||`<tr><td colspan="7">No correction requests found.</td></tr>`}</tbody>
+    </table>
+  </div>`;
+}
+
+async function cmHandleCorrection(requestId,decision){
+  const label=decision==="approve"?"approve":"reject";
+  const remark=prompt(`CM remark for ${label} (optional):`,"")||"";
+
+  if(!confirm(`${decision==="approve"?"Approve":"Reject"} this employee correction only?`))return;
+
+  try{
+    const d=await apiPost({
+      action:"handleCMCorrection",
+      cmId:currentSupervisor.supervisorId,
+      requestId,
+      decision,
+      remark
+    },{noRetry:true});
+
+    showGlobal(d.message,"ok");
+    await loadCMCorrections();
+  }catch(e){
+    alert(e.message);
+  }
 }
 
 async function loadCMApprovals(){
