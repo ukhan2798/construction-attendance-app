@@ -757,6 +757,22 @@
       max-width:280px;white-space:normal;line-height:1.3;color:#475569
     }
 
+
+    .cm-correction-count{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:7px 10px;border-radius:999px;
+      background:#fff7ed;border:1px solid #fed7aa;
+      color:#9a3412;font-size:11px;font-weight:800
+    }
+    .cm-correction-count b{font-size:14px}
+    .cm-correction-card{
+      border-left:4px solid #2563eb
+    }
+    .cm-correction-empty{
+      padding:18px;text-align:center;color:#64748b;
+      background:#f8fafc;border-radius:10px
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1078,9 +1094,9 @@
         <div class="section-title">
           <div>
             <h2 style="margin-bottom:3px">Construction Manager Approval</h2>
-            <div class="small muted">Review and approve complete supervisor daily submissions</div>
+            <div class="small muted">Review daily submissions and individual employee corrections</div>
           </div>
-          <button class="btn btn-soft" onclick="loadCMApprovals()">↻ Refresh</button>
+          <button class="btn btn-soft" onclick="refreshCMAll()">↻ Refresh All</button>
         </div>
 
         <div class="summary-grid">
@@ -1099,6 +1115,31 @@
 
         <div id="cmApprovalList">
           <div class="empty">Loading daily approvals...</div>
+        </div>
+      </div>
+
+      <div class="card" id="cmCorrectionPanel">
+        <div class="section-title">
+          <div>
+            <h3 style="margin:0">Individual Employee Corrections</h3>
+            <div class="small muted" style="margin-top:4px">
+              Only employees with approved correction requests appear here. The original full-day approval remains locked.
+            </div>
+          </div>
+          <div class="row wrap">
+            <span class="cm-correction-count"><b id="cmCorrectionPendingCount">0</b> Pending</span>
+            <select id="cmCorrectionStatusFilter" onchange="loadCMCorrections()" style="width:auto">
+              <option value="pending" selected>Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+            <button class="btn btn-soft" onclick="loadCMCorrections()">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div id="cmCorrectionTable">
+          <div class="empty">Loading individual corrections...</div>
         </div>
       </div>
 
@@ -1302,29 +1343,6 @@
 
 
 <!-- CM DAY DETAIL MODAL -->
-
-      <div id="cmCorrectionPanel" class="hidden card" style="margin-top:12px">
-        <div class="section-title">
-          <div>
-            <h3 style="margin:0">Employee Correction Requests</h3>
-            <div class="small muted" style="margin-top:4px">
-              Only corrected employees are shown here. Original full-day approvals remain locked.
-            </div>
-          </div>
-          <div class="row wrap">
-            <select id="cmCorrectionStatusFilter" onchange="loadCMCorrections()" style="width:auto">
-              <option value="pending" selected>Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="all">All</option>
-            </select>
-            <button class="btn btn-soft" onclick="loadCMCorrections()">Refresh</button>
-            <button class="btn btn-soft" onclick="hideCMCorrections()">Close</button>
-          </div>
-        </div>
-        <div id="cmCorrectionTable"></div>
-      </div>
-
 <div class="modal hidden" id="cmDetailModal">
   <div class="modal-box" style="max-width:980px">
     <div class="modal-head">
@@ -1553,7 +1571,7 @@ async function init(){
         await adminLoadDashboard();
       }else if(isCMUser()){
         showCMApp();
-        await loadCMApprovals();
+        await refreshCMAll();
       }else{
         showMainApp();
         await loadCrewAndToday();
@@ -1727,7 +1745,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v38";
+const CACHE_VERSION = "v39";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -1859,7 +1877,7 @@ async function login(){
       await adminLoadDashboard();
     }else if(isCMUser()){
       showCMApp();
-      await loadCMApprovals();
+      await refreshCMAll();
     }else{
       showMainApp();
       await loadCrewAndToday();
@@ -1979,35 +1997,64 @@ function setCMFilter(status, btn){
 }
 
 
+async function refreshCMAll(){
+  await Promise.allSettled([
+    loadCMApprovals(),
+    loadCMCorrections()
+  ]);
+}
+
 function showCMCorrections(){
   const panel=document.getElementById("cmCorrectionPanel");
-  if(panel) panel.classList.remove("hidden");
+  if(panel){
+    panel.classList.remove("hidden");
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }
   loadCMCorrections();
 }
 
 function hideCMCorrections(){
-  const panel=document.getElementById("cmCorrectionPanel");
-  if(panel) panel.classList.add("hidden");
+  // Correction section remains visible in CM screen by design.
 }
 
 async function loadCMCorrections(){
   const box=document.getElementById("cmCorrectionTable");
   if(!box || !currentSupervisor)return;
 
-  box.innerHTML=`<div class="empty"><div class="spinner"></div>Loading employee corrections...</div>`;
+  box.innerHTML=`<div class="empty"><div class="spinner"></div>Loading individual corrections...</div>`;
 
   try{
     const status=document.getElementById("cmCorrectionStatusFilter")?.value||"pending";
-    const d=await apiPost({
-      action:"getCMCorrectionRequests",
-      cmId:currentSupervisor.supervisorId,
-      status
-    });
 
-    cmCorrectionRows=d.corrections||[];
+    const [selectedData,pendingData] = await Promise.all([
+      apiPost({
+        action:"getCMCorrectionRequests",
+        cmId:currentSupervisor.supervisorId,
+        status
+      }),
+      status==="pending"
+        ? Promise.resolve(null)
+        : apiPost({
+            action:"getCMCorrectionRequests",
+            cmId:currentSupervisor.supervisorId,
+            status:"pending"
+          })
+    ]);
+
+    cmCorrectionRows=selectedData.corrections||[];
+
+    const pendingRows = status==="pending"
+      ? cmCorrectionRows
+      : (pendingData?.corrections||[]);
+
+    const count=document.getElementById("cmCorrectionPendingCount");
+    if(count) count.textContent=String(pendingRows.length);
+
     renderCMCorrections();
   }catch(e){
-    box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}</div>`;
+    const count=document.getElementById("cmCorrectionPendingCount");
+    if(count) count.textContent="!";
+    box.innerHTML=`<div class="notice err">${escapeHtml(e.message)}<br><button class="btn btn-soft" style="margin-top:8px" onclick="loadCMCorrections()">Try Again</button></div>`;
   }
 }
 
@@ -2018,7 +2065,7 @@ function renderCMCorrections(){
   const rows=cmCorrectionRows.map(r=>{
     const pending=String(r.cmStatus||"Pending").toLowerCase()==="pending";
     return `<tr>
-      <td>${escapeHtml(r.date)}</td>
+      <td><b>${escapeHtml(r.date)}</b><br><span class="small muted">Requested ${escapeHtml(r.requestedAt||"")}</span></td>
       <td><b>${escapeHtml(r.workerId)}</b><br>${escapeHtml(r.workerName)}</td>
       <td>${escapeHtml(r.supervisorId)}</td>
       <td>
@@ -2045,7 +2092,7 @@ function renderCMCorrections(){
         <th>Date</th><th>Employee</th><th>Supervisor</th>
         <th>Correction</th><th>Reason</th><th>CM Status</th><th>Action</th>
       </tr></thead>
-      <tbody>${rows||`<tr><td colspan="7">No correction requests found.</td></tr>`}</tbody>
+      <tbody>${rows||`<tr><td colspan="7"><div class="cm-correction-empty">No individual correction requests in this filter.</div></td></tr>`}</tbody>
     </table>
   </div>`;
 }
@@ -2254,7 +2301,7 @@ async function submitCMDecision(decision){
 
     closeCMDetail();
     showNotice("cmGlobalNotice", data.message || "CM decision saved.", "ok");
-    await loadCMApprovals();
+    await refreshCMAll();
   }catch(err){
     alert(err.message);
   }finally{
