@@ -773,650 +773,6 @@
       background:#f8fafc;border-radius:10px
     }
 
-
-    /* ===== SUPERVISOR SINGLE-PAGE DAILY FILL v40 ===== */
-    .attendance-sheet{
-      border:1px solid #dbe5f2;
-      border-radius:14px;
-      overflow:hidden;
-      background:#fff;
-      box-shadow:0 5px 18px rgba(15,23,42,.05);
-    }
-    .attendance-grid-head,
-    .attendance-row{
-      display:grid;
-      grid-template-columns:42px 110px minmax(190px,1.4fr) minmax(130px,.8fr) minmax(310px,1.6fr) 110px minmax(180px,1fr);
-      align-items:center;
-    }
-    .attendance-grid-head{
-      position:sticky;
-      top:0;
-      z-index:3;
-      background:#eef4ff;
-      border-bottom:1px solid #cbd9eb;
-      color:#29496d;
-      font-size:10px;
-      font-weight:900;
-      text-transform:uppercase;
-      letter-spacing:.25px;
-    }
-    .attendance-grid-head>div{padding:10px 8px}
-    .attendance-row{
-      min-height:62px;
-      border-bottom:1px solid #edf2f7;
-      transition:.12s ease;
-    }
-    .attendance-row:last-child{border-bottom:0}
-    .attendance-row:hover{background:#f9fbff}
-    .attendance-row.locked{background:#fafafa}
-    .attendance-cell{padding:8px;min-width:0}
-    .attendance-num{text-align:center;font-weight:900;color:#64748b}
-    .attendance-id{
-      font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
-      font-size:11px;font-weight:900;color:#334155
-    }
-    .attendance-name{font-size:12px;font-weight:900;color:#10213b;line-height:1.2}
-    .attendance-sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.2}
-    .daily-status-actions{
-      display:flex;gap:4px;flex-wrap:wrap;align-items:center
-    }
-    .status-quick{
-      min-width:38px;height:31px;padding:0 8px;
-      border:1px solid #dbe5f2;border-radius:8px;
-      background:#fff;color:#475569;font-size:10px;font-weight:900;
-      cursor:pointer
-    }
-    .status-quick:hover{border-color:#9bb9e6}
-    .status-quick.active-P{background:#dcfce7;border-color:#86efac;color:#166534}
-    .status-quick.active-OFF{background:#fef3c7;border-color:#fcd34d;color:#92400e}
-    .status-quick.active-AL{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
-    .status-quick.active-A{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
-    .status-quick:disabled{opacity:.55;cursor:not-allowed}
-    .status-more{
-      height:31px;min-width:84px;padding:4px 7px;
-      border:1px solid #dbe5f2;border-radius:8px;
-      background:#fff;font-size:10px;font-weight:800
-    }
-    .daily-ot-inline{
-      display:grid;grid-template-columns:28px 44px 28px;
-      gap:4px;align-items:center;justify-content:start
-    }
-    .daily-ot-inline button{
-      height:30px;border:1px solid #dbe5f2;border-radius:8px;background:#f8fafc;
-      font-weight:900;cursor:pointer
-    }
-    .daily-ot-inline input{
-      width:44px;height:30px;padding:4px;text-align:center;
-      border:1px solid #dbe5f2;border-radius:8px;font-size:11px;font-weight:900
-    }
-    .daily-comment-input{
-      width:100%;min-height:32px;max-height:58px;resize:vertical;
-      padding:7px 8px;border:1px solid #dbe5f2;border-radius:8px;
-      background:#fff;font-size:10px;line-height:1.25
-    }
-    .daily-lock{
-      display:inline-flex;padding:5px 8px;border-radius:999px;
-      background:#f1f5f9;color:#64748b;font-size:9px;font-weight:900
-    }
-    .daily-no-ot{
-      display:inline-flex;margin-top:4px;padding:3px 6px;border-radius:999px;
-      background:#fef2f2;color:#b91c1c;font-size:8px;font-weight:900
-    }
-    .attendance-scroll{overflow:auto;max-height:58vh}
-    @media(max-width:900px){
-      .attendance-grid-head{display:none}
-      .attendance-scroll{max-height:none;overflow:visible}
-      .attendance-sheet{border:0;box-shadow:none;background:transparent}
-      .attendance-row{
-        display:grid;
-        grid-template-columns:34px 1fr auto;
-        grid-template-areas:
-          "num person ot"
-          "num status status"
-          "num comment comment";
-        gap:5px 8px;
-        margin-bottom:8px;
-        border:1px solid #dbe5f2!important;
-        border-radius:12px;
-        background:#fff;
-        min-height:0;
-        padding:8px;
-      }
-      .attendance-row:hover{background:#fff}
-      .attendance-row.locked{background:#fafafa}
-      .attendance-cell{padding:2px}
-      .attendance-num{grid-area:num;align-self:start;padding-top:4px}
-      .cell-id{display:none}
-      .cell-person{grid-area:person}
-      .cell-position{display:none}
-      .cell-status{grid-area:status}
-      .cell-ot{grid-area:ot;align-self:start}
-      .cell-comment{grid-area:comment}
-      .attendance-name{font-size:12px}
-      .attendance-sub{font-size:9px}
-      .daily-status-actions{gap:3px}
-      .status-quick{min-width:36px;height:29px;padding:0 6px}
-      .status-more{height:29px;min-width:80px}
-      .daily-comment-input{min-height:30px}
-    }
-    @media(max-width:520px){
-      .summary-grid{grid-template-columns:repeat(2,1fr)}
-      .quick-tools .btn{flex:1}
-      .attendance-row{
-        grid-template-columns:28px 1fr;
-        grid-template-areas:
-          "num person"
-          "num status"
-          "num ot"
-          "num comment";
-      }
-      .cell-ot{grid-area:ot}
-      .daily-ot-inline{justify-content:start}
-      .status-quick{font-size:9px;min-width:34px}
-      .status-more{font-size:9px}
-    }
-
-
-    /* ===== GLOBAL MODERN UI v41 ===== */
-    :root{
-      --bg:#f3f7fc;
-      --card:#ffffff;
-      --primary:#1466e8;
-      --primary2:#0d47a1;
-      --text:#14213d;
-      --muted:#6b7a90;
-      --line:#dbe5f2;
-      --soft:#f7faff;
-      --shadow:0 14px 34px rgba(23,56,96,.10);
-      --radius:18px;
-    }
-    body{
-      background:
-        radial-gradient(circle at 8% 0%,rgba(20,102,232,.08),transparent 28%),
-        linear-gradient(180deg,#f5f9ff 0%,#eef4fb 100%);
-      min-height:100vh;
-    }
-    .container{max-width:1180px;padding-top:20px}
-    .topbar{
-      background:linear-gradient(110deg,#0b3d91 0%,#1466e8 58%,#2493ff 100%);
-      padding:12px 18px;
-      box-shadow:0 8px 28px rgba(13,71,161,.24)
-    }
-    .brand-title{font-size:19px}
-    .brand-sub{font-size:11px}
-    .card{
-      border:1px solid rgba(204,219,239,.9);
-      border-radius:18px;
-      box-shadow:0 12px 34px rgba(23,56,96,.08)
-    }
-    .btn{
-      border-radius:10px;
-      transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
-    }
-    .btn:not(:disabled):hover{transform:translateY(-1px)}
-    .btn-primary{
-      background:linear-gradient(135deg,#1565e8,#0b57d0);
-      box-shadow:0 7px 16px rgba(21,101,232,.22)
-    }
-    .btn-soft{background:#edf4ff;color:#0d4faa}
-    .summary-box{
-      background:#fff;
-      box-shadow:0 4px 14px rgba(15,23,42,.04);
-      border-color:#e0e8f3;
-      padding:13px 8px
-    }
-    .summary-grid .summary-box:nth-child(1){background:linear-gradient(180deg,#eef5ff,#fff)}
-    .summary-grid .summary-box:nth-child(2){background:linear-gradient(180deg,#ecfdf3,#fff)}
-    .summary-grid .summary-box:nth-child(3){background:linear-gradient(180deg,#fff1f2,#fff)}
-    .summary-grid .summary-box:nth-child(4){background:linear-gradient(180deg,#fff8e7,#fff)}
-    .nav{
-      box-shadow:0 -8px 24px rgba(23,56,96,.08);
-      border-top-color:#dce6f3
-    }
-    .nav button.active{
-      background:linear-gradient(180deg,#e7f1ff,#dfeaff);
-      box-shadow:inset 0 0 0 1px #cbdfff
-    }
-
-    /* Login */
-    .login-wrap{
-      max-width:470px;
-      margin:5vh auto 0;
-      position:relative;
-    }
-    .login-wrap:before{
-      content:"DMT SEA PALACE";
-      display:block;
-      text-align:center;
-      font-size:11px;
-      font-weight:900;
-      letter-spacing:2.2px;
-      color:#1466e8;
-      margin-bottom:10px;
-    }
-    #loginView .card{
-      position:relative;
-      padding:30px 30px 24px;
-      overflow:hidden;
-      border:1px solid #d5e2f2;
-      background:
-        linear-gradient(180deg,rgba(255,255,255,.98),rgba(250,253,255,.98));
-      box-shadow:0 22px 60px rgba(22,66,117,.16);
-    }
-    #loginView .card:before{
-      content:"";
-      position:absolute;
-      left:0;right:0;top:0;height:7px;
-      background:linear-gradient(90deg,#0b57d0,#00a4ef,#16a34a,#f59e0b);
-    }
-    #loginView .card:after{
-      content:"CONSTRUCTION ATTENDANCE";
-      display:block;
-      text-align:center;
-      margin-top:18px;
-      font-size:9px;
-      font-weight:900;
-      letter-spacing:2px;
-      color:#94a3b8;
-    }
-    .login-logo{
-      width:150px;height:150px;
-      margin:4px auto 18px;
-      border:7px solid #fff;
-      box-shadow:0 12px 32px rgba(13,71,161,.14),0 0 0 1px #dce7f4;
-    }
-    #loginView h2{
-      font-size:24px!important;
-      color:#10213b;
-      letter-spacing:-.3px
-    }
-    #loginView p{
-      color:#728197!important;
-      font-size:12px!important
-    }
-    #loginView label{
-      color:#30445f;
-      font-size:11px;
-      letter-spacing:.15px
-    }
-    #loginView input,#loginView select{
-      min-height:48px;
-      border-radius:11px;
-      background:#fbfdff;
-      border-color:#cfdcec
-    }
-    #loginView #loginBtn{
-      min-height:48px;
-      font-size:14px;
-      margin-top:4px
-    }
-    #loginView .btn-soft{
-      background:#f0f5ff
-    }
-
-    /* Supervisor top card */
-    #viewToday>.card{
-      padding:18px;
-      background:linear-gradient(180deg,#fff,#fbfdff)
-    }
-    #viewToday .section-title h2{
-      font-size:22px;
-      color:#10213b
-    }
-    .daily-badge{
-      box-shadow:inset 0 0 0 1px rgba(20,102,232,.12)
-    }
-    .daily-toolbar{
-      background:#f7faff;
-      border:1px solid #e0e9f5;
-      padding:10px;
-      border-radius:13px
-    }
-    .quick-tools{
-      margin-top:10px;
-      padding:8px 0
-    }
-    .attendance-sheet{
-      box-shadow:0 7px 20px rgba(15,23,42,.05)
-    }
-    .attendance-grid-head{
-      background:linear-gradient(180deg,#edf5ff,#e7f0fc)
-    }
-    .attendance-row:hover{background:#f8fbff}
-    .status-quick.active-P{box-shadow:0 3px 8px rgba(22,163,74,.14)}
-    .status-quick.active-OFF{box-shadow:0 3px 8px rgba(245,158,11,.14)}
-    .status-quick.active-AL{box-shadow:0 3px 8px rgba(37,99,235,.14)}
-    .status-quick.active-A{box-shadow:0 3px 8px rgba(220,38,38,.14)}
-    .actions{
-      background:rgba(243,247,252,.88);
-      backdrop-filter:blur(12px)
-    }
-    #submitBtn{
-      min-height:50px;
-      font-size:14px
-    }
-
-    /* CM */
-    #cmApp>.card:first-child{
-      border-top:5px solid #1466e8
-    }
-    #cmApp .summary-box:nth-child(1){background:linear-gradient(180deg,#fff7ed,#fff)}
-    #cmApp .summary-box:nth-child(2){background:linear-gradient(180deg,#ecfdf3,#fff)}
-    #cmApp .summary-box:nth-child(3){background:linear-gradient(180deg,#fff1f2,#fff)}
-    #cmApp .summary-box:nth-child(4){background:linear-gradient(180deg,#eef5ff,#fff)}
-    #cmCorrectionPanel{
-      border-left:5px solid #f59e0b;
-      background:linear-gradient(180deg,#fff,#fffcf7)
-    }
-
-    /* Admin */
-    #adminApp>.card{border-radius:20px}
-    .admin-hero{
-      background:linear-gradient(125deg,#0b3d91,#1466e8 65%,#2396ff)
-    }
-    .admin-tabs{background:#f5f9ff}
-    .admin-tabs .btn-primary{background:linear-gradient(135deg,#1466e8,#0b57d0)}
-    .admin-stat{box-shadow:0 5px 16px rgba(15,23,42,.04)}
-
-    @media(max-width:700px){
-      .container{padding:12px 10px 92px}
-      .topbar{padding:10px 12px}
-      .brand-title{font-size:16px}
-      .brand-sub{font-size:10px}
-      .login-wrap{margin:2vh auto 0}
-      #loginView .card{padding:22px 16px 18px}
-      .login-logo{width:122px;height:122px}
-      #loginView h2{font-size:21px!important}
-      #viewToday>.card{padding:12px}
-      #viewToday .section-title h2{font-size:18px}
-      .card{border-radius:14px}
-      .summary-box{padding:10px 5px}
-    }
-
-
-    /* ===== SCREENSHOT-MATCHED UI v42 ===== */
-    body.logged-in{
-      background:#f5f9fe;
-    }
-    .desktop-sidebar{
-      position:fixed;left:0;top:0;bottom:0;width:188px;z-index:50;
-      background:linear-gradient(180deg,#0a315d 0%,#092a4f 100%);
-      color:#fff;display:flex;flex-direction:column;
-      box-shadow:8px 0 30px rgba(7,32,61,.12)
-    }
-    .side-brand{
-      display:flex;align-items:center;gap:10px;padding:20px 14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.08)
-    }
-    .side-logo{
-      width:42px;height:42px;border-radius:10px;
-      display:grid;place-items:center;font-size:22px;font-weight:900;
-      background:rgba(255,255,255,.08);color:#fff
-    }
-    .side-brand b{display:block;font-size:14px}
-    .side-brand span{display:block;font-size:9px;color:#c8d8ea;margin-top:2px}
-    .side-menu{padding:12px 8px;display:flex;flex-direction:column;gap:4px;flex:1}
-    .side-menu button{
-      width:100%;display:flex;align-items:center;gap:9px;
-      border:0;background:transparent;color:#d7e4f2;
-      padding:10px 11px;border-radius:8px;text-align:left;
-      font-size:11px;font-weight:800;cursor:pointer
-    }
-    .side-menu button:hover{background:rgba(255,255,255,.07)}
-    .side-menu button.active{
-      background:linear-gradient(90deg,#1473f3,#1165dc);
-      color:#fff;box-shadow:0 6px 14px rgba(20,115,243,.25)
-    }
-    .side-menu .mi{width:18px;text-align:center;font-size:14px}
-    .side-profile{
-      display:flex;align-items:center;gap:9px;padding:13px 12px;
-      border-top:1px solid rgba(255,255,255,.08)
-    }
-    .side-avatar{
-      width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
-      background:linear-gradient(135deg,#ec4899,#8b5cf6);
-      font-size:10px;font-weight:900;color:white
-    }
-    .side-profile-text b{display:block;font-size:10px}
-    .side-profile-text span{display:block;font-size:8px;color:#c8d8ea;margin-top:2px}
-
-    body.logged-in .topbar{
-      margin-left:188px;
-      height:54px;
-      padding:0 20px;
-      display:flex!important;
-      align-items:center;
-      background:#0b2f55;
-      box-shadow:none;
-      border-bottom:1px solid rgba(255,255,255,.06)
-    }
-    body.logged-in .topbar .toprow{width:100%}
-    body.logged-in .brand-title{font-size:0}
-    body.logged-in .brand-title:after{
-      content:"DMT Sea Palace";font-size:17px;font-weight:900;color:#fff
-    }
-    body.logged-in .brand-sub{display:none}
-    body.logged-in .status-pill{
-      background:transparent;border:0;padding:0;color:#dbeafe;font-size:10px
-    }
-
-    body.logged-in .container{
-      max-width:none;
-      margin-left:188px;
-      padding:14px 14px 95px;
-    }
-    body.logged-in #mainApp,
-    body.logged-in #cmApp,
-    body.logged-in #adminApp{
-      max-width:1400px;margin:0 auto;
-    }
-
-    /* Supervisor screenshot-style hero */
-    #viewToday>.card{
-      padding:0;
-      overflow:hidden;
-      border-radius:12px;
-      box-shadow:0 5px 20px rgba(20,63,110,.07)
-    }
-    .daily-modern-hero{
-      display:flex;justify-content:space-between;align-items:center;gap:14px;
-      padding:15px 16px;
-      background:linear-gradient(100deg,#0877f7,#2c9cff);
-      color:white
-    }
-    .daily-modern-left{display:flex;align-items:center;gap:12px}
-    .daily-modern-icon{
-      width:48px;height:48px;border-radius:10px;background:#fff;
-      display:grid;place-items:center;color:#1466e8;font-size:22px;font-weight:900
-    }
-    .daily-modern-hero h2{font-size:20px!important;color:#fff!important;margin:0 0 3px}
-    .daily-modern-hero p{margin:0;font-size:10px;color:#e6f2ff}
-    .daily-team-card{
-      min-width:175px;background:rgba(255,255,255,.93);color:#12345b;
-      border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px
-    }
-    .daily-team-card .mini-logo{
-      width:34px;height:34px;border-radius:7px;background:#eaf3ff;
-      display:grid;place-items:center;color:#1466e8;font-weight:900
-    }
-    .daily-team-card b{display:block;font-size:11px}
-    .daily-team-card span{display:block;font-size:8px;color:#64748b;margin-top:2px}
-
-    #viewToday .daily-toolbar{
-      display:grid;grid-template-columns:155px 150px minmax(220px,1fr) auto auto auto;
-      gap:8px;align-items:end;padding:10px 12px 4px;
-      background:#fff;border:0;border-radius:0
-    }
-    #viewToday .daily-toolbar .field{margin:0}
-    #viewToday .daily-toolbar label{font-size:8px;color:#64748b}
-    #viewToday .daily-toolbar input,
-    #viewToday .daily-toolbar select{
-      height:38px;min-height:38px;border-radius:8px;font-size:10px;background:#fff
-    }
-    #viewToday .date-nav-btn{display:none}
-
-    .quick-tools{
-      padding:6px 12px 8px!important;margin:0!important;
-      display:flex;gap:6px;align-items:center;background:#fff;border-bottom:1px solid #e5edf7
-    }
-    .quick-tools .btn{
-      min-height:36px;padding:8px 12px;font-size:10px;border-radius:8px
-    }
-    .quick-tools:before{
-      content:"Quick Status:";
-      font-size:9px;font-weight:900;color:#64748b;margin-right:2px
-    }
-    #draftStatus{margin-left:auto}
-    .summary-grid{
-      position:absolute;right:28px;top:137px;
-      display:grid!important;grid-template-columns:repeat(4,72px)!important;
-      gap:6px!important;z-index:2
-    }
-    .summary-box{padding:8px 5px!important;border-radius:8px!important}
-    .summary-box b{font-size:14px!important}
-    .summary-box span{font-size:7px!important}
-
-    #viewToday .row.wrap[style*="justify-content"]{
-      padding:8px 12px;margin:0!important;background:#fff
-    }
-    #workerList{padding:0 12px 12px}
-    .attendance-sheet{border-radius:8px}
-    .attendance-grid-head{
-      grid-template-columns:38px 100px minmax(165px,1.15fr) 120px minmax(250px,1.3fr) 90px minmax(150px,.9fr) 105px;
-      background:#edf4fb!important
-    }
-    .attendance-row{
-      grid-template-columns:38px 100px minmax(165px,1.15fr) 120px minmax(250px,1.3fr) 90px minmax(150px,.9fr) 105px;
-      min-height:50px
-    }
-    .attendance-cell{padding:6px}
-    .attendance-name{font-size:10px}
-    .attendance-sub{font-size:8px}
-    .attendance-id{font-size:9px}
-    .status-quick{height:27px;min-width:34px;font-size:8px;padding:0 6px}
-    .status-more{height:27px;min-width:70px;font-size:8px}
-    .daily-ot-inline{grid-template-columns:22px 38px 22px}
-    .daily-ot-inline button{height:26px}
-    .daily-ot-inline input{height:26px;width:38px;font-size:9px}
-    .daily-comment-input{min-height:28px;font-size:8px}
-
-    .actions{
-      display:flex;gap:8px;align-items:center;
-      background:#fff!important;padding:8px 12px 12px!important
-    }
-    #submitBtn{max-width:210px;min-height:40px!important;margin-left:auto}
-    .report-tools{margin:0!important}
-
-    /* Admin screenshot style */
-    #adminApp>.card{box-shadow:0 5px 20px rgba(20,63,110,.07)}
-    .admin-hero{
-      background:#fff!important;color:#14213d!important;
-      padding:14px 16px!important;border-bottom:1px solid #e5edf7
-    }
-    .admin-hero h2{color:#14213d}
-    .admin-hero .muted{color:#64748b!important}
-    .admin-hero-badge{display:none!important}
-    .admin-tabs{
-      display:flex!important;gap:6px!important;overflow:auto;
-      padding:8px 12px!important;background:#fff!important
-    }
-    .admin-tabs .btn{min-width:max-content!important;min-height:36px!important}
-    .admin-content{background:#f8fbff}
-    .admin-grid{grid-template-columns:repeat(4,1fr)!important}
-    .admin-stat{border-radius:10px!important}
-
-    /* CM screenshot style */
-    #cmApp>.card:first-child{
-      border-top:0!important;
-      box-shadow:0 5px 20px rgba(20,63,110,.07)
-    }
-    #cmApp .section-title{margin-bottom:10px}
-    #cmApp .summary-grid{
-      position:static!important;
-      grid-template-columns:repeat(4,minmax(110px,1fr))!important;
-      gap:8px!important
-    }
-    #cmCorrectionPanel{
-      border-left:0!important;border-top:4px solid #ff9f1c!important
-    }
-
-    @media(max-width:900px){
-      .desktop-sidebar{display:none!important}
-      body.logged-in .topbar{margin-left:0}
-      body.logged-in .container{margin-left:0;padding:10px 8px 90px}
-      #viewToday .daily-toolbar{
-        grid-template-columns:1fr 1fr;
-      }
-      .summary-grid{
-        position:static!important;
-        grid-template-columns:repeat(2,1fr)!important;
-        padding:8px 12px 0
-      }
-      .daily-team-card{display:none}
-      .daily-modern-hero{padding:12px}
-      .daily-modern-icon{width:42px;height:42px}
-      .daily-modern-hero h2{font-size:17px!important}
-      .quick-tools{flex-wrap:wrap}
-      #draftStatus{margin-left:0}
-      .actions{position:sticky;bottom:66px;z-index:8}
-      #submitBtn{max-width:none;flex:1}
-    }
-
-
-    .cell-action{text-align:center}
-    .correction-btn{
-      min-height:30px;padding:6px 9px;border:1px solid #f6b94b;
-      border-radius:8px;background:#fff7e6;color:#a45a00;
-      font-size:8px;font-weight:900;cursor:pointer;white-space:nowrap
-    }
-    .correction-btn:hover{background:#ffefc7}
-    .correction-btn:disabled{
-      opacity:.45;cursor:not-allowed;background:#f8fafc;border-color:#dbe5f2;color:#94a3b8
-    }
-    .correction-hint{
-      display:inline-flex;align-items:center;gap:5px;
-      padding:5px 8px;border-radius:999px;background:#fff7e6;
-      color:#a45a00;font-size:8px;font-weight:900
-    }
-    @media(max-width:900px){
-      .attendance-row{
-        grid-template-columns:34px 1fr auto;
-        grid-template-areas:
-          "num person action"
-          "num status status"
-          "num ot comment";
-      }
-      .cell-action{grid-area:action;align-self:start}
-      .cell-comment{grid-area:comment}
-      .correction-btn{min-height:28px;padding:5px 7px}
-    }
-    @media(max-width:520px){
-      .attendance-row{
-        grid-template-columns:28px 1fr;
-        grid-template-areas:
-          "num person"
-          "num action"
-          "num status"
-          "num ot"
-          "num comment";
-      }
-      .cell-action{text-align:left}
-    }
-
-
-  .build-badge{
-    position:fixed;right:8px;bottom:8px;z-index:9999;
-    background:#0b57d0;color:#fff;border-radius:999px;
-    padding:5px 9px;font-size:9px;font-weight:900;
-    box-shadow:0 4px 12px rgba(0,0,0,.16)
-  }
-
-
-    .login-speed-note{
-      margin-top:10px;text-align:center;
-      color:#64748b;font-size:9px;font-weight:700
-    }
-
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1425,27 +781,7 @@
 
 </head>
 <body>
-<div class="build-badge">v46 • Instant Login</div>
 <div class="app">
-
-  <aside id="desktopSidebar" class="desktop-sidebar hidden">
-    <div class="side-brand">
-      <div class="side-logo">◢◣</div>
-      <div>
-        <b>DMT Sea Palace</b>
-        <span>Construction Attendance</span>
-      </div>
-    </div>
-    <div id="desktopSideMenu" class="side-menu"></div>
-    <div class="side-profile">
-      <div class="side-avatar" id="sideAvatar">S1</div>
-      <div class="side-profile-text">
-        <b id="sideUserName">User</b>
-        <span id="sideUserRole">Supervisor</span>
-      </div>
-    </div>
-  </aside>
-
 
   <header class="topbar hidden" id="appHeader">
     <div class="toprow">
@@ -1472,12 +808,11 @@
         </p>
 
         <div id="loginNotice"></div>
-        <div class="login-speed-note">⚡ Login users are available instantly. Google refreshes quietly after the page opens.</div>
 
         <div class="field">
           <label>User</label>
           <select id="loginSupervisor">
-            <option value="SUP001">Site Supervisor (SUP001)</option><option value="CM001">Eng Bilal (CM001)</option><option value="ADMIN">System Administrator (ADMIN)</option>
+            <option value="">Loading supervisors...</option>
           </select>
         </div>
 
@@ -1502,48 +837,23 @@
       <!-- TODAY -->
       <section id="viewToday">
         <div class="card">
-          
-          <div class="daily-modern-hero">
-            <div class="daily-modern-left">
-              <div class="daily-modern-icon">▣</div>
-              <div>
-                <h2>Daily Attendance</h2>
-                <p>Mark attendance for all your workers in one page</p>
-              </div>
+          <div class="section-title">
+            <div>
+              <h2 style="margin-bottom:3px">Daily Attendance</h2>
+              <div class="small muted" id="todayLabel"></div>
+              <span id="attendanceDateBadge" class="daily-badge today">Today</span>
+              <div id="dailySyncStatus" class="sync-status"><span class="sync-dot"></span><span>Ready</span></div>
             </div>
-            <div class="daily-team-card">
-              <div class="mini-logo">◢◣</div>
-              <div>
-                <b id="dailyTeamLabel">Site Team</b>
-                <span id="dailyTeamSupervisor">Supervisor</span>
-              </div>
-            </div>
+            <button class="btn btn-soft" onclick="refreshToday()">↻ Refresh</button>
           </div>
-          <div style="display:none">
-            <span id="dailyDateLabel"></span>
-            <span id="dailyTodayBadge"></span>
-            <div id="dailySyncStatus" class="sync-status"><span class="sync-dot"></span><span>Ready</span></div>
-          </div>
-
 
           <div class="daily-toolbar">
+            <button class="btn btn-soft date-nav-btn" type="button" onclick="changeAttendanceDate(-1)" title="Previous day">‹</button>
             <div class="field">
               <label>Attendance Date</label>
               <input id="attendanceDate" type="date" onchange="onAttendanceDateChanged(this.value)">
             </div>
-            <div class="field">
-              <label>Team</label>
-              <select disabled><option>All Workers</option></select>
-            </div>
-            <div class="field">
-              <label>Search</label>
-              <input id="dailyWorkerSearch" placeholder="Search worker name or ID..." oninput="renderWorkers()">
-            </div>
-            <button class="btn btn-primary" type="button" onclick="refreshToday()">Load Team</button>
-            <button class="btn btn-soft" type="button" onclick="clearAllOT()">Clear OT</button>
-            <button class="btn" style="background:#16a34a;color:#fff" type="button" onclick="submitAttendance()">Submit All</button>
-            <button class="btn btn-soft date-nav-btn" type="button" onclick="changeAttendanceDate(-1)">‹</button>
-            <button class="btn btn-soft date-nav-btn" id="nextAttendanceDateBtn" type="button" onclick="changeAttendanceDate(1)">›</button>
+            <button class="btn btn-soft date-nav-btn" id="nextAttendanceDateBtn" type="button" onclick="changeAttendanceDate(1)" title="Next day">›</button>
           </div>
 
           <div class="quick-tools">
@@ -1562,16 +872,11 @@
           </div>
 
           <div class="row wrap" style="justify-content:space-between;margin-bottom:10px">
-            <span class="small muted">Fill every employee on one page. P = 8 normal hours; OT entered manually.</span>
+            <span class="small muted">Normal hours: P = 8 hours. OT entered manually.</span>
             <span id="queueChip" class="queue-chip hidden"></span>
           </div>
 
-          
-          <div id="submittedCorrectionHelp" class="hidden" style="margin:8px 12px;padding:9px 11px;border-radius:9px;background:#fff7e6;border:1px solid #f6c766;color:#9a5a00;font-size:10px;font-weight:800">
-            Submitted date: use the <b>Correction Request</b> button on the required employee row.
-          </div>
-
-<div id="workerList"></div>
+          <div id="workerList"></div>
         </div>
 
         <div class="actions">
@@ -2258,7 +1563,7 @@ async function init(){
         throw new Error("Saved supervisor session is invalid.");
       }
 
-      renderInstantLoginUsers(); setTimeout(()=>loadSupervisors({silent:true}),2000);
+      await loadSupervisors();
 
       if(isAdminUser()){
         adminPin = sessionStorage.getItem("attendance_admin_pin") || "1334";
@@ -2285,7 +1590,7 @@ async function init(){
     }
   }
 
-  renderInstantLoginUsers(); setTimeout(()=>loadSupervisors({silent:true}),2000);
+  await loadSupervisors();
 }
 
 function getTodayISO(){
@@ -2440,7 +1745,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v46";
+const CACHE_VERSION = "v39";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -2494,104 +1799,36 @@ function setDailySyncStatus(mode, textValue){
    LOGIN
 ========================================================= */
 
+async function loadSupervisors(){
+  const select = document.getElementById("loginSupervisor");
+  const supCacheKey = `attendance_cache_${CACHE_VERSION}_supervisors_global`;
+  const cached = getFastCache(supCacheKey, 24 * 60 * 60 * 1000);
 
-const BUILTIN_LOGIN_USERS = [
-  {supervisorId:"SUP001", supervisorName:"Site Supervisor", project:"DMT-25221", role:"Supervisor"},
-  {supervisorId:"CM001", supervisorName:"Eng Bilal", project:"DMT-25221", role:"CM"},
-  {supervisorId:"ADMIN", supervisorName:"System Administrator", project:"DMT-25221", role:"Admin"}
-];
-
-function renderInstantLoginUsers(){
-  const select=document.getElementById("loginSupervisor");
-  if(!select) return;
-
-  let list=getPersistentSupervisorCache();
-  if(!Array.isArray(list) || !list.length){
-    list=BUILTIN_LOGIN_USERS;
-  }
-
-  renderSupervisorOptions(list);
-}
-
-function getPersistentSupervisorCache(){
-  const fixedKey="attendance_supervisors_persistent_v1";
-  try{
-    const fixed=localStorage.getItem(fixedKey);
-    if(fixed){
-      const parsed=JSON.parse(fixed);
-      if(Array.isArray(parsed) && parsed.length) return parsed;
-    }
-  }catch(e){}
-
-  // Recover supervisor cache saved by any older app version.
-  let newest=null;
-  let newestTs=0;
-  try{
-    for(let i=0;i<localStorage.length;i++){
-      const key=localStorage.key(i)||"";
-      if(!key.includes("supervisors_global")) continue;
-      try{
-        const raw=JSON.parse(localStorage.getItem(key)||"null");
-        if(raw && Array.isArray(raw.value) && raw.value.length){
-          const ts=Number(raw.ts||0);
-          if(ts>=newestTs){
-            newest=raw.value;
-            newestTs=ts;
-          }
-        }
-      }catch(e){}
-    }
-  }catch(e){}
-
-  if(newest){
-    try{ localStorage.setItem(fixedKey,JSON.stringify(newest)); }catch(e){}
-    return newest;
-  }
-  return null;
-}
-
-function savePersistentSupervisorCache(list){
-  try{
-    localStorage.setItem(
-      "attendance_supervisors_persistent_v1",
-      JSON.stringify(list||[])
-    );
-  }catch(e){}
-}
-
-function renderSupervisorOptions(list, loadingText=false){
-  const select=document.getElementById("loginSupervisor");
-  if(!select) return;
-
-  supervisors=(list||[]).filter(s=>s&&s.supervisorId);
-
-  if(supervisors.length){
-    select.innerHTML=`<option value="">Select Supervisor</option>`+
-      supervisors.map(s=>
-        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName||s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
+  if(cached && Array.isArray(cached.value)){
+    supervisors = cached.value.filter(s => s && s.supervisorId);
+    select.innerHTML = `<option value="">Select Supervisor</option>` +
+      supervisors.map(s =>
+        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
       ).join("");
     populateTransferSupervisors();
-  }else if(loadingText){
-    select.innerHTML=`<option value="SUP001">Site Supervisor (SUP001)</option><option value="CM001">Eng Bilal (CM001)</option><option value="ADMIN">System Administrator (ADMIN)</option>`;
   }
-}
-
-async function loadSupervisors(options={}){
-  // Login must never wait for Google.
-  renderInstantLoginUsers();
 
   try{
-    const data=await apiPost({action:"getSupervisors"},{noRetry:true});
-    const fresh=(data.supervisors||[]).filter(s=>s&&s.supervisorId);
+    const data = await apiPost({action:"getSupervisors"});
+    supervisors = (data.supervisors || []).filter(s => s && s.supervisorId);
+    setFastCache(supCacheKey, supervisors);
 
-    if(fresh.length){
-      savePersistentSupervisorCache(fresh);
-      renderSupervisorOptions(fresh);
-    }
-    return fresh;
+    select.innerHTML = `<option value="">Select Supervisor</option>` +
+      supervisors.map(s =>
+        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
+      ).join("");
+
+    populateTransferSupervisors();
   }catch(err){
-    // Keep the already-visible saved/built-in list.
-    return getPersistentSupervisorCache() || BUILTIN_LOGIN_USERS;
+    if(!cached){
+      select.innerHTML = `<option value="">Unable to load supervisors</option>`;
+      showNotice("loginNotice", err.message, "err");
+    }
   }
 }
 
@@ -2668,68 +1905,6 @@ function isCMUser(){
   );
 }
 
-
-
-function openSupervisorCorrectionsHelp(btn){
-  showView("History",btn);
-  setTimeout(()=>{
-    showGlobal(
-      "To request a correction: open the required back-date, then tap the employee's Correction button.",
-      "warn"
-    );
-  },150);
-}
-
-function setDesktopRoleUI(role){
-  const sidebar=document.getElementById("desktopSidebar");
-  const menu=document.getElementById("desktopSideMenu");
-  if(!sidebar||!menu)return;
-
-  sidebar.classList.remove("hidden");
-  document.body.classList.add("logged-in");
-
-  const name=currentSupervisor?.supervisorName || currentSupervisor?.supervisorId || "User";
-  const id=currentSupervisor?.supervisorId || "";
-  document.getElementById("sideUserName").textContent=id;
-  document.getElementById("sideUserRole").textContent=
-    role==="admin" ? "System Administrator" : role==="cm" ? "Construction Manager" : "Supervisor";
-  document.getElementById("sideAvatar").textContent=
-    role==="admin" ? "AD" : role==="cm" ? "CM" : (id||"S1").slice(0,2).toUpperCase();
-
-  if(role==="supervisor"){
-    menu.innerHTML=`
-      <button onclick="showView('Today',this)" class="active"><span class="mi">▣</span>Attendance</button>
-      <button onclick="showView('Monthly',this)"><span class="mi">▦</span>Month</button>
-      <button onclick="showView('History',this)"><span class="mi">◷</span>History</button>
-      <button onclick="openSupervisorCorrectionsHelp(this)"><span class="mi">✎</span>Corrections</button>
-      <button onclick="showView('Staff',this)"><span class="mi">👥</span>My Staff</button>
-      <button onclick="showView('Transfers',this)"><span class="mi">⇄</span>Transfers</button>
-      <button onclick="showView('Account',this)"><span class="mi">⚙</span>Account</button>
-      <button onclick="logout()"><span class="mi">↪</span>Logout</button>`;
-  }else if(role==="cm"){
-    menu.innerHTML=`
-      <button class="active" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span class="mi">✓</span>CM Approval</button>
-      <button onclick="document.getElementById('cmCorrectionPanel')?.scrollIntoView({behavior:'smooth'})"><span class="mi">✎</span>Corrections</button>
-      <button onclick="refreshCMAll()"><span class="mi">↻</span>Refresh</button>
-      <button onclick="openApiSettings()"><span class="mi">⚙</span>Settings</button>
-      <button onclick="logout()"><span class="mi">↪</span>Logout</button>`;
-  }else{
-    menu.innerHTML=`
-      <button class="active" onclick="adminShowTab('dashboard',this)"><span class="mi">⌂</span>Dashboard</button>
-      <button onclick="adminShowTab('workers',this)"><span class="mi">👥</span>Employees</button>
-      <button onclick="adminShowTab('master',this)"><span class="mi">▤</span>Master Data</button>
-      <button onclick="adminShowTab('supervisors',this)"><span class="mi">♙</span>Users</button>
-      <button onclick="adminShowTab('equipment',this)"><span class="mi">▣</span>Equipment</button>
-      <button onclick="adminShowTab('attendance',this)"><span class="mi">✓</span>Attendance</button>
-      <button onclick="adminShowTab('approvals',this)"><span class="mi">☑</span>Approvals</button>
-      <button onclick="adminShowTab('sheets',this)"><span class="mi">▦</span>All Sheets</button>
-      <button onclick="logout()"><span class="mi">↪</span>Logout</button>`;
-  }
-
-  const team=document.getElementById("dailyTeamSupervisor");
-  if(team) team.textContent=`${id} • ${name}`;
-}
-
 function showAdminApp(){
   document.getElementById("loginView").classList.add("hidden");
   document.getElementById("mainApp").classList.add("hidden");
@@ -2737,7 +1912,6 @@ function showAdminApp(){
   document.getElementById("adminApp").classList.remove("hidden");
   document.getElementById("appHeader").classList.remove("hidden");
   document.getElementById("bottomNav").classList.add("hidden");
-  setDesktopRoleUI("admin");
   const brand = document.querySelector(".brand-title");
   if(brand) brand.textContent = "DMT Sea Palace - Admin Control";
   document.getElementById("headerSupervisor").textContent = "System Administrator • ADMIN";
@@ -2753,7 +1927,6 @@ function showCMApp(){
   document.getElementById("cmApp").classList.remove("hidden");
   document.getElementById("appHeader").classList.remove("hidden");
   document.getElementById("bottomNav").classList.add("hidden");
-  setDesktopRoleUI("cm");
 
   const brand = document.querySelector(".brand-title");
   if(brand) brand.textContent = "DMT Sea Palace - CM Approval";
@@ -2776,7 +1949,6 @@ function showMainApp(){
   document.getElementById("mainApp").classList.remove("hidden");
   document.getElementById("appHeader").classList.remove("hidden");
   document.getElementById("bottomNav").classList.remove("hidden");
-  setDesktopRoleUI("supervisor");
 
   document.getElementById("headerSupervisor").textContent =
     `${currentSupervisor.supervisorName || currentSupervisor.supervisorId} • ${currentSupervisor.supervisorId}`;
@@ -2802,8 +1974,6 @@ function logout(){
   document.getElementById("cmDetailModal").classList.add("hidden");
   document.getElementById("appHeader").classList.add("hidden");
   document.getElementById("bottomNav").classList.add("hidden");
-  document.getElementById("desktopSidebar").classList.add("hidden");
-  document.body.classList.remove("logged-in");
   document.getElementById("loginView").classList.remove("hidden");
   document.getElementById("loginPin").value = "";
 }
@@ -3407,40 +2577,11 @@ function renderWorkers(){
 
   if(!workers.length){
     list.innerHTML = `<div class="empty">No active workers assigned to this supervisor.</div>`;
-    renderDayReviewBanner();
     updateSummary();
-    updateSubmitButton();
     return;
   }
 
-  const q=(document.getElementById("dailyWorkerSearch")?.value||"").toLowerCase().trim();
-  const visibleWorkers = q
-    ? workers.filter(w => `${w.workerId} ${w.workerName} ${w.designation}`.toLowerCase().includes(q))
-    : workers;
-
-  const help=document.getElementById("submittedCorrectionHelp");
-  if(help){
-    help.classList.toggle("hidden", !workers.some(w=>w.submitted));
-  }
-
-  list.innerHTML = `
-    <div class="attendance-sheet">
-      <div class="attendance-grid-head">
-        <div>#</div>
-        <div>Worker ID</div>
-        <div>Worker Name</div>
-        <div>Position</div>
-        <div>Status</div>
-        <div>OT Hours</div>
-        <div>Work / OT Remark</div>
-        <div>Actions</div>
-      </div>
-      <div class="attendance-scroll">
-        ${visibleWorkers.map(w=>attendanceRowHtml(w,workers.indexOf(w))).join("")}
-      </div>
-    </div>
-  `;
-
+  list.innerHTML = workers.map((w,index) => workerCardHtml(w,index)).join("");
   renderDayReviewBanner();
   updateSummary();
   updateSubmitButton();
@@ -3469,84 +2610,91 @@ function renderDayReviewBanner(){
   }
 }
 
-function attendanceQuickButton(index,code,label,w,locked){
-  const active=w.workStatus===code ? `active-${code}` : "";
-  return `<button type="button" class="status-quick ${active}" ${locked?"disabled":""}
-    onclick="changeStatus(${index},'${code}')">${label}</button>`;
-}
-
-function attendanceRowHtml(w,index){
-  const locked=!!w.submitted;
-  const info=STATUS_INFO[w.workStatus]||STATUS_INFO.P;
-  const otEligible=w.otEligible!==false;
-  const otherCodes=["EL","SL","PH","BD"];
-  const otherSelected=otherCodes.includes(w.workStatus);
+function workerCardHtml(w,index){
+  const locked = !!w.submitted;
+  const status = STATUS_INFO[w.workStatus] || STATUS_INFO.P;
+  const otEligible = w.otEligible !== false;
+  const correctionText =
+    w.correctionStatus && w.correctionStatus !== "None"
+      ? ` • Correction: ${escapeHtml(w.correctionStatus)}`
+      : "";
 
   return `
-    <div class="attendance-row ${locked?"locked":""}">
-      <div class="attendance-cell attendance-num">${index+1}</div>
-
-      <div class="attendance-cell cell-id">
-        <div class="attendance-id">${escapeHtml(w.workerId)}</div>
-      </div>
-
-      <div class="attendance-cell cell-person">
-        <div class="attendance-name">${escapeHtml(w.workerName)}</div>
-        <div class="attendance-sub">
-          ${escapeHtml(w.workerId)}
-          ${w.location ? " • "+escapeHtml(w.location) : ""}
-          ${locked ? ' • <span class="daily-lock">LOCKED</span>' : ""}
+    <div class="worker ${locked ? "locked" : ""}">
+      <div class="worker-head">
+        <div>
+          <div class="worker-name">${index+1}. ${escapeHtml(w.workerName)}</div>
+          <div class="worker-meta">
+            ${escapeHtml(w.workerId)} • ${escapeHtml(w.designation || "")}
+            ${w.location ? " • " + escapeHtml(w.location) : ""}
+            ${!otEligible ? '<span class="no-ot-badge">NO OT</span>' : ''}
+          </div>
         </div>
+        <span class="status-badge status-${escapeHtml(w.workStatus)}">${escapeHtml(w.workStatus)}</span>
       </div>
 
-      <div class="attendance-cell cell-position">
-        <div class="attendance-name" style="font-size:11px">${escapeHtml(w.designation||"—")}</div>
-        ${!otEligible ? '<span class="daily-no-ot">NO OT</span>' : ""}
-      </div>
-
-      <div class="attendance-cell cell-status">
-        <div class="daily-status-actions">
-          ${attendanceQuickButton(index,"P","P",w,locked)}
-          ${attendanceQuickButton(index,"OFF","OFF",w,locked)}
-          ${attendanceQuickButton(index,"AL","LEAVE",w,locked)}
-          ${attendanceQuickButton(index,"A","ABS",w,locked)}
-          <select class="status-more" ${locked?"disabled":""}
-            onchange="if(this.value) changeStatus(${index},this.value)">
-            <option value="">More${otherSelected ? " • "+escapeHtml(w.workStatus) : ""}</option>
-            <option value="EL" ${w.workStatus==="EL"?"selected":""}>EL - Emergency Leave</option>
-            <option value="SL" ${w.workStatus==="SL"?"selected":""}>SL - Sick Leave</option>
-            <option value="PH" ${w.workStatus==="PH"?"selected":""}>PH - Public Holiday</option>
-            <option value="BD" ${w.workStatus==="BD"?"selected":""}>BD - Breakdown</option>
+      <div class="worker-grid">
+        <div>
+          <label>Work Status</label>
+          <select ${locked ? "disabled" : ""} onchange="changeStatus(${index},this.value)">
+            ${Object.entries(STATUS_INFO).map(([code,info]) =>
+              `<option value="${code}" ${w.workStatus===code ? "selected" : ""}>${code} - ${info.label}</option>`
+            ).join("")}
           </select>
         </div>
-      </div>
 
-      <div class="attendance-cell cell-ot">
-        <div class="daily-ot-inline">
-          <button type="button" ${locked || !info.ot || !otEligible ? "disabled":""}
-            onclick="stepOT(${index},-0.5)">−</button>
-          <input type="number" min="0" max="8" step="0.5"
-            value="${Number(w.otHours||0)}"
-            ${locked || !info.ot || !otEligible ? "disabled":""}
-            onchange="setOT(${index},this.value)">
-          <button type="button" ${locked || !info.ot || !otEligible ? "disabled":""}
-            onclick="stepOT(${index},0.5)">+</button>
+        <div>
+          <label>OT Hours</label>
+          <div class="ot-stepper">
+            <button ${locked || !status.ot || !otEligible ? "disabled" : ""} onclick="stepOT(${index},-0.5)">−</button>
+            <input
+              type="number"
+              min="0" max="8" step="0.5"
+              value="${Number(w.otHours || 0)}"
+              ${locked || !status.ot || !otEligible ? "disabled" : ""}
+              onchange="setOT(${index},this.value)"
+            />
+            <button ${locked || !status.ot || !otEligible ? "disabled" : ""} onclick="stepOT(${index},0.5)">+</button>
+          </div>
+        </div>
+
+        <div>
+          <label>Normal</label>
+          <div class="hours-box">${Number(w.normalHours || 0)}</div>
+        </div>
+
+        <div>
+          <label>Total</label>
+          <div class="hours-box">${Number(w.totalHours || 0)}</div>
         </div>
       </div>
 
-      <div class="attendance-cell cell-comment">
-        <textarea class="daily-comment-input" maxlength="500"
-          ${locked?"disabled":""}
-          placeholder="${Number(w.otHours||0)>0 ? "OT work / reason..." : "Optional remark..."}"
-          oninput="setSupervisorComment(${index},this.value)">${escapeHtml(w.supervisorComment||"")}</textarea>
-      </div>
+      ${(!locked && Number(w.otHours || 0) > 0) ? `
+        <div class="worker-comment">
+          <label>Work / OT Comment</label>
+          <textarea maxlength="500"
+            placeholder="Mention work done or reason for overtime..."
+            oninput="setSupervisorComment(${index},this.value)">${escapeHtml(w.supervisorComment || "")}</textarea>
+          <div class="comment-hint">Optional • CM will see this before approval.</div>
+        </div>
+      ` : ""}
 
-      <div class="attendance-cell cell-action">
-        ${locked
-          ? `<button type="button" class="correction-btn"
-               onclick="openCorrectionModal(${index})">✎ CORRECTION REQUEST</button>`
-          : `<span class="small muted">—</span>`}
-      </div>
+      ${(locked && w.supervisorComment) ? `
+        <div class="submitted-comment"><b>Work / OT Comment:</b> ${escapeHtml(w.supervisorComment)}</div>
+      ` : ""}
+
+      ${locked ? `
+        <div class="row wrap" style="justify-content:space-between;margin-top:10px">
+          <div class="locked-note">🔒 Submitted${correctionText}</div>
+          ${
+            String(w.correctionStatus || "").toLowerCase() === "pending"
+              ? `<button class="btn btn-soft small" disabled>⏳ Correction Pending</button>`
+              : `<button class="btn btn-soft small" onclick="openCorrectionModal(${index})">
+                   Request Correction
+                 </button>`
+          }
+        </div>
+      ` : ""}
     </div>
   `;
 }
@@ -4598,9 +3746,6 @@ function printCurrentStaff(){
         };
       <\/script>
     
-
-
-
 </body>
     </html>
   `);
