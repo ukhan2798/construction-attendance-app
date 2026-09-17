@@ -773,6 +773,149 @@
       background:#f8fafc;border-radius:10px
     }
 
+
+    /* ===== SUPERVISOR SINGLE-PAGE DAILY FILL v40 ===== */
+    .attendance-sheet{
+      border:1px solid #dbe5f2;
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow:0 5px 18px rgba(15,23,42,.05);
+    }
+    .attendance-grid-head,
+    .attendance-row{
+      display:grid;
+      grid-template-columns:42px 110px minmax(190px,1.4fr) minmax(130px,.8fr) minmax(310px,1.6fr) 110px minmax(180px,1fr);
+      align-items:center;
+    }
+    .attendance-grid-head{
+      position:sticky;
+      top:0;
+      z-index:3;
+      background:#eef4ff;
+      border-bottom:1px solid #cbd9eb;
+      color:#29496d;
+      font-size:10px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.25px;
+    }
+    .attendance-grid-head>div{padding:10px 8px}
+    .attendance-row{
+      min-height:62px;
+      border-bottom:1px solid #edf2f7;
+      transition:.12s ease;
+    }
+    .attendance-row:last-child{border-bottom:0}
+    .attendance-row:hover{background:#f9fbff}
+    .attendance-row.locked{background:#fafafa}
+    .attendance-cell{padding:8px;min-width:0}
+    .attendance-num{text-align:center;font-weight:900;color:#64748b}
+    .attendance-id{
+      font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+      font-size:11px;font-weight:900;color:#334155
+    }
+    .attendance-name{font-size:12px;font-weight:900;color:#10213b;line-height:1.2}
+    .attendance-sub{font-size:10px;color:#64748b;margin-top:3px;line-height:1.2}
+    .daily-status-actions{
+      display:flex;gap:4px;flex-wrap:wrap;align-items:center
+    }
+    .status-quick{
+      min-width:38px;height:31px;padding:0 8px;
+      border:1px solid #dbe5f2;border-radius:8px;
+      background:#fff;color:#475569;font-size:10px;font-weight:900;
+      cursor:pointer
+    }
+    .status-quick:hover{border-color:#9bb9e6}
+    .status-quick.active-P{background:#dcfce7;border-color:#86efac;color:#166534}
+    .status-quick.active-OFF{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+    .status-quick.active-AL{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
+    .status-quick.active-A{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
+    .status-quick:disabled{opacity:.55;cursor:not-allowed}
+    .status-more{
+      height:31px;min-width:84px;padding:4px 7px;
+      border:1px solid #dbe5f2;border-radius:8px;
+      background:#fff;font-size:10px;font-weight:800
+    }
+    .daily-ot-inline{
+      display:grid;grid-template-columns:28px 44px 28px;
+      gap:4px;align-items:center;justify-content:start
+    }
+    .daily-ot-inline button{
+      height:30px;border:1px solid #dbe5f2;border-radius:8px;background:#f8fafc;
+      font-weight:900;cursor:pointer
+    }
+    .daily-ot-inline input{
+      width:44px;height:30px;padding:4px;text-align:center;
+      border:1px solid #dbe5f2;border-radius:8px;font-size:11px;font-weight:900
+    }
+    .daily-comment-input{
+      width:100%;min-height:32px;max-height:58px;resize:vertical;
+      padding:7px 8px;border:1px solid #dbe5f2;border-radius:8px;
+      background:#fff;font-size:10px;line-height:1.25
+    }
+    .daily-lock{
+      display:inline-flex;padding:5px 8px;border-radius:999px;
+      background:#f1f5f9;color:#64748b;font-size:9px;font-weight:900
+    }
+    .daily-no-ot{
+      display:inline-flex;margin-top:4px;padding:3px 6px;border-radius:999px;
+      background:#fef2f2;color:#b91c1c;font-size:8px;font-weight:900
+    }
+    .attendance-scroll{overflow:auto;max-height:58vh}
+    @media(max-width:900px){
+      .attendance-grid-head{display:none}
+      .attendance-scroll{max-height:none;overflow:visible}
+      .attendance-sheet{border:0;box-shadow:none;background:transparent}
+      .attendance-row{
+        display:grid;
+        grid-template-columns:34px 1fr auto;
+        grid-template-areas:
+          "num person ot"
+          "num status status"
+          "num comment comment";
+        gap:5px 8px;
+        margin-bottom:8px;
+        border:1px solid #dbe5f2!important;
+        border-radius:12px;
+        background:#fff;
+        min-height:0;
+        padding:8px;
+      }
+      .attendance-row:hover{background:#fff}
+      .attendance-row.locked{background:#fafafa}
+      .attendance-cell{padding:2px}
+      .attendance-num{grid-area:num;align-self:start;padding-top:4px}
+      .cell-id{display:none}
+      .cell-person{grid-area:person}
+      .cell-position{display:none}
+      .cell-status{grid-area:status}
+      .cell-ot{grid-area:ot;align-self:start}
+      .cell-comment{grid-area:comment}
+      .attendance-name{font-size:12px}
+      .attendance-sub{font-size:9px}
+      .daily-status-actions{gap:3px}
+      .status-quick{min-width:36px;height:29px;padding:0 6px}
+      .status-more{height:29px;min-width:80px}
+      .daily-comment-input{min-height:30px}
+    }
+    @media(max-width:520px){
+      .summary-grid{grid-template-columns:repeat(2,1fr)}
+      .quick-tools .btn{flex:1}
+      .attendance-row{
+        grid-template-columns:28px 1fr;
+        grid-template-areas:
+          "num person"
+          "num status"
+          "num ot"
+          "num comment";
+      }
+      .cell-ot{grid-area:ot}
+      .daily-ot-inline{justify-content:start}
+      .status-quick{font-size:9px;min-width:34px}
+      .status-more{font-size:9px}
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -872,7 +1015,7 @@
           </div>
 
           <div class="row wrap" style="justify-content:space-between;margin-bottom:10px">
-            <span class="small muted">Normal hours: P = 8 hours. OT entered manually.</span>
+            <span class="small muted">Fill every employee on one page. P = 8 normal hours; OT entered manually.</span>
             <span id="queueChip" class="queue-chip hidden"></span>
           </div>
 
@@ -1745,7 +1888,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v39";
+const CACHE_VERSION = "v40";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -2577,11 +2720,29 @@ function renderWorkers(){
 
   if(!workers.length){
     list.innerHTML = `<div class="empty">No active workers assigned to this supervisor.</div>`;
+    renderDayReviewBanner();
     updateSummary();
+    updateSubmitButton();
     return;
   }
 
-  list.innerHTML = workers.map((w,index) => workerCardHtml(w,index)).join("");
+  list.innerHTML = `
+    <div class="attendance-sheet">
+      <div class="attendance-grid-head">
+        <div>#</div>
+        <div>Worker ID</div>
+        <div>Worker Name</div>
+        <div>Position</div>
+        <div>Status</div>
+        <div>OT Hours</div>
+        <div>Work / OT Remark</div>
+      </div>
+      <div class="attendance-scroll">
+        ${workers.map((w,index)=>attendanceRowHtml(w,index)).join("")}
+      </div>
+    </div>
+  `;
+
   renderDayReviewBanner();
   updateSummary();
   updateSubmitButton();
@@ -2610,91 +2771,77 @@ function renderDayReviewBanner(){
   }
 }
 
-function workerCardHtml(w,index){
-  const locked = !!w.submitted;
-  const status = STATUS_INFO[w.workStatus] || STATUS_INFO.P;
-  const otEligible = w.otEligible !== false;
-  const correctionText =
-    w.correctionStatus && w.correctionStatus !== "None"
-      ? ` • Correction: ${escapeHtml(w.correctionStatus)}`
-      : "";
+function attendanceQuickButton(index,code,label,w,locked){
+  const active=w.workStatus===code ? `active-${code}` : "";
+  return `<button type="button" class="status-quick ${active}" ${locked?"disabled":""}
+    onclick="changeStatus(${index},'${code}')">${label}</button>`;
+}
+
+function attendanceRowHtml(w,index){
+  const locked=!!w.submitted;
+  const info=STATUS_INFO[w.workStatus]||STATUS_INFO.P;
+  const otEligible=w.otEligible!==false;
+  const otherCodes=["EL","SL","PH","BD"];
+  const otherSelected=otherCodes.includes(w.workStatus);
 
   return `
-    <div class="worker ${locked ? "locked" : ""}">
-      <div class="worker-head">
-        <div>
-          <div class="worker-name">${index+1}. ${escapeHtml(w.workerName)}</div>
-          <div class="worker-meta">
-            ${escapeHtml(w.workerId)} • ${escapeHtml(w.designation || "")}
-            ${w.location ? " • " + escapeHtml(w.location) : ""}
-            ${!otEligible ? '<span class="no-ot-badge">NO OT</span>' : ''}
-          </div>
-        </div>
-        <span class="status-badge status-${escapeHtml(w.workStatus)}">${escapeHtml(w.workStatus)}</span>
+    <div class="attendance-row ${locked?"locked":""}">
+      <div class="attendance-cell attendance-num">${index+1}</div>
+
+      <div class="attendance-cell cell-id">
+        <div class="attendance-id">${escapeHtml(w.workerId)}</div>
       </div>
 
-      <div class="worker-grid">
-        <div>
-          <label>Work Status</label>
-          <select ${locked ? "disabled" : ""} onchange="changeStatus(${index},this.value)">
-            ${Object.entries(STATUS_INFO).map(([code,info]) =>
-              `<option value="${code}" ${w.workStatus===code ? "selected" : ""}>${code} - ${info.label}</option>`
-            ).join("")}
+      <div class="attendance-cell cell-person">
+        <div class="attendance-name">${escapeHtml(w.workerName)}</div>
+        <div class="attendance-sub">
+          ${escapeHtml(w.workerId)}
+          ${w.location ? " • "+escapeHtml(w.location) : ""}
+          ${locked ? ' • <span class="daily-lock">LOCKED</span>' : ""}
+        </div>
+      </div>
+
+      <div class="attendance-cell cell-position">
+        <div class="attendance-name" style="font-size:11px">${escapeHtml(w.designation||"—")}</div>
+        ${!otEligible ? '<span class="daily-no-ot">NO OT</span>' : ""}
+      </div>
+
+      <div class="attendance-cell cell-status">
+        <div class="daily-status-actions">
+          ${attendanceQuickButton(index,"P","P",w,locked)}
+          ${attendanceQuickButton(index,"OFF","OFF",w,locked)}
+          ${attendanceQuickButton(index,"AL","LEAVE",w,locked)}
+          ${attendanceQuickButton(index,"A","ABS",w,locked)}
+          <select class="status-more" ${locked?"disabled":""}
+            onchange="if(this.value) changeStatus(${index},this.value)">
+            <option value="">More${otherSelected ? " • "+escapeHtml(w.workStatus) : ""}</option>
+            <option value="EL" ${w.workStatus==="EL"?"selected":""}>EL - Emergency Leave</option>
+            <option value="SL" ${w.workStatus==="SL"?"selected":""}>SL - Sick Leave</option>
+            <option value="PH" ${w.workStatus==="PH"?"selected":""}>PH - Public Holiday</option>
+            <option value="BD" ${w.workStatus==="BD"?"selected":""}>BD - Breakdown</option>
           </select>
         </div>
+      </div>
 
-        <div>
-          <label>OT Hours</label>
-          <div class="ot-stepper">
-            <button ${locked || !status.ot || !otEligible ? "disabled" : ""} onclick="stepOT(${index},-0.5)">−</button>
-            <input
-              type="number"
-              min="0" max="8" step="0.5"
-              value="${Number(w.otHours || 0)}"
-              ${locked || !status.ot || !otEligible ? "disabled" : ""}
-              onchange="setOT(${index},this.value)"
-            />
-            <button ${locked || !status.ot || !otEligible ? "disabled" : ""} onclick="stepOT(${index},0.5)">+</button>
-          </div>
-        </div>
-
-        <div>
-          <label>Normal</label>
-          <div class="hours-box">${Number(w.normalHours || 0)}</div>
-        </div>
-
-        <div>
-          <label>Total</label>
-          <div class="hours-box">${Number(w.totalHours || 0)}</div>
+      <div class="attendance-cell cell-ot">
+        <div class="daily-ot-inline">
+          <button type="button" ${locked || !info.ot || !otEligible ? "disabled":""}
+            onclick="stepOT(${index},-0.5)">−</button>
+          <input type="number" min="0" max="8" step="0.5"
+            value="${Number(w.otHours||0)}"
+            ${locked || !info.ot || !otEligible ? "disabled":""}
+            onchange="setOT(${index},this.value)">
+          <button type="button" ${locked || !info.ot || !otEligible ? "disabled":""}
+            onclick="stepOT(${index},0.5)">+</button>
         </div>
       </div>
 
-      ${(!locked && Number(w.otHours || 0) > 0) ? `
-        <div class="worker-comment">
-          <label>Work / OT Comment</label>
-          <textarea maxlength="500"
-            placeholder="Mention work done or reason for overtime..."
-            oninput="setSupervisorComment(${index},this.value)">${escapeHtml(w.supervisorComment || "")}</textarea>
-          <div class="comment-hint">Optional • CM will see this before approval.</div>
-        </div>
-      ` : ""}
-
-      ${(locked && w.supervisorComment) ? `
-        <div class="submitted-comment"><b>Work / OT Comment:</b> ${escapeHtml(w.supervisorComment)}</div>
-      ` : ""}
-
-      ${locked ? `
-        <div class="row wrap" style="justify-content:space-between;margin-top:10px">
-          <div class="locked-note">🔒 Submitted${correctionText}</div>
-          ${
-            String(w.correctionStatus || "").toLowerCase() === "pending"
-              ? `<button class="btn btn-soft small" disabled>⏳ Correction Pending</button>`
-              : `<button class="btn btn-soft small" onclick="openCorrectionModal(${index})">
-                   Request Correction
-                 </button>`
-          }
-        </div>
-      ` : ""}
+      <div class="attendance-cell cell-comment">
+        <textarea class="daily-comment-input" maxlength="500"
+          ${locked?"disabled":""}
+          placeholder="${Number(w.otHours||0)>0 ? "OT work / reason..." : "Optional remark..."}"
+          oninput="setSupervisorComment(${index},this.value)">${escapeHtml(w.supervisorComment||"")}</textarea>
+      </div>
     </div>
   `;
 }
