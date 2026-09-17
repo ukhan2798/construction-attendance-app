@@ -1403,6 +1403,20 @@
       .cell-action{text-align:left}
     }
 
+
+  .build-badge{
+    position:fixed;right:8px;bottom:8px;z-index:9999;
+    background:#0b57d0;color:#fff;border-radius:999px;
+    padding:5px 9px;font-size:9px;font-weight:900;
+    box-shadow:0 4px 12px rgba(0,0,0,.16)
+  }
+
+
+    .login-speed-note{
+      margin-top:10px;text-align:center;
+      color:#64748b;font-size:9px;font-weight:700
+    }
+
 </style>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1411,6 +1425,7 @@
 
 </head>
 <body>
+<div class="build-badge">v45 • Fast Login + Correction</div>
 <div class="app">
 
   <aside id="desktopSidebar" class="desktop-sidebar hidden">
@@ -1457,6 +1472,7 @@
         </p>
 
         <div id="loginNotice"></div>
+        <div class="login-speed-note">⚡ Saved user list loads instantly; Google refreshes quietly in the background.</div>
 
         <div class="field">
           <label>User</label>
@@ -1550,7 +1566,12 @@
             <span id="queueChip" class="queue-chip hidden"></span>
           </div>
 
-          <div id="workerList"></div>
+          
+          <div id="submittedCorrectionHelp" class="hidden" style="margin:8px 12px;padding:9px 11px;border-radius:9px;background:#fff7e6;border:1px solid #f6c766;color:#9a5a00;font-size:10px;font-weight:800">
+            Submitted date: use the <b>Correction Request</b> button on the required employee row.
+          </div>
+
+<div id="workerList"></div>
         </div>
 
         <div class="actions">
@@ -2237,7 +2258,7 @@ async function init(){
         throw new Error("Saved supervisor session is invalid.");
       }
 
-      await loadSupervisors();
+      loadSupervisors({silent:true});
 
       if(isAdminUser()){
         adminPin = sessionStorage.getItem("attendance_admin_pin") || "1334";
@@ -2264,7 +2285,7 @@ async function init(){
     }
   }
 
-  await loadSupervisors();
+  loadSupervisors();
 }
 
 function getTodayISO(){
@@ -2419,7 +2440,7 @@ async function apiPost(payload, options={}){
    FAST LOCAL CACHE
 ========================================================= */
 
-const CACHE_VERSION = "v43";
+const CACHE_VERSION = "v45";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 function cacheKey(name, suffix=""){
@@ -2473,36 +2494,98 @@ function setDailySyncStatus(mode, textValue){
    LOGIN
 ========================================================= */
 
-async function loadSupervisors(){
-  const select = document.getElementById("loginSupervisor");
-  const supCacheKey = `attendance_cache_${CACHE_VERSION}_supervisors_global`;
-  const cached = getFastCache(supCacheKey, 24 * 60 * 60 * 1000);
+function getPersistentSupervisorCache(){
+  const fixedKey="attendance_supervisors_persistent_v1";
+  try{
+    const fixed=localStorage.getItem(fixedKey);
+    if(fixed){
+      const parsed=JSON.parse(fixed);
+      if(Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  }catch(e){}
 
-  if(cached && Array.isArray(cached.value)){
-    supervisors = cached.value.filter(s => s && s.supervisorId);
-    select.innerHTML = `<option value="">Select Supervisor</option>` +
-      supervisors.map(s =>
-        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
+  // Recover supervisor cache saved by any older app version.
+  let newest=null;
+  let newestTs=0;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||"";
+      if(!key.includes("supervisors_global")) continue;
+      try{
+        const raw=JSON.parse(localStorage.getItem(key)||"null");
+        if(raw && Array.isArray(raw.value) && raw.value.length){
+          const ts=Number(raw.ts||0);
+          if(ts>=newestTs){
+            newest=raw.value;
+            newestTs=ts;
+          }
+        }
+      }catch(e){}
+    }
+  }catch(e){}
+
+  if(newest){
+    try{ localStorage.setItem(fixedKey,JSON.stringify(newest)); }catch(e){}
+    return newest;
+  }
+  return null;
+}
+
+function savePersistentSupervisorCache(list){
+  try{
+    localStorage.setItem(
+      "attendance_supervisors_persistent_v1",
+      JSON.stringify(list||[])
+    );
+  }catch(e){}
+}
+
+function renderSupervisorOptions(list, loadingText=false){
+  const select=document.getElementById("loginSupervisor");
+  if(!select) return;
+
+  supervisors=(list||[]).filter(s=>s&&s.supervisorId);
+
+  if(supervisors.length){
+    select.innerHTML=`<option value="">Select Supervisor</option>`+
+      supervisors.map(s=>
+        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName||s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
       ).join("");
     populateTransferSupervisors();
+  }else if(loadingText){
+    select.innerHTML=`<option value="">Loading supervisors...</option>`;
+  }
+}
+
+async function loadSupervisors(options={}){
+  const silent=!!options.silent;
+  const select=document.getElementById("loginSupervisor");
+
+  // 1) Show saved users immediately, even after app version updates.
+  const cached=getPersistentSupervisorCache();
+  if(cached?.length){
+    renderSupervisorOptions(cached);
+  }else if(!silent){
+    renderSupervisorOptions([],true);
   }
 
+  // 2) Refresh from Google quietly in the background.
   try{
-    const data = await apiPost({action:"getSupervisors"});
-    supervisors = (data.supervisors || []).filter(s => s && s.supervisorId);
-    setFastCache(supCacheKey, supervisors);
+    const data=await apiPost({action:"getSupervisors"},{noRetry:false});
+    const fresh=(data.supervisors||[]).filter(s=>s&&s.supervisorId);
 
-    select.innerHTML = `<option value="">Select Supervisor</option>` +
-      supervisors.map(s =>
-        `<option value="${escapeHtml(s.supervisorId)}">${escapeHtml(s.supervisorName || s.supervisorId)} (${escapeHtml(s.supervisorId)})</option>`
-      ).join("");
-
-    populateTransferSupervisors();
-  }catch(err){
-    if(!cached){
-      select.innerHTML = `<option value="">Unable to load supervisors</option>`;
-      showNotice("loginNotice", err.message, "err");
+    if(fresh.length){
+      savePersistentSupervisorCache(fresh);
+      renderSupervisorOptions(fresh);
     }
+    return fresh;
+  }catch(err){
+    // Never replace a usable cached login list with an error.
+    if(!cached?.length && !silent){
+      select.innerHTML=`<option value="">Unable to load supervisors</option>`;
+      showNotice("loginNotice",err.message,"err");
+    }
+    return cached||[];
   }
 }
 
@@ -3329,6 +3412,11 @@ function renderWorkers(){
     ? workers.filter(w => `${w.workerId} ${w.workerName} ${w.designation}`.toLowerCase().includes(q))
     : workers;
 
+  const help=document.getElementById("submittedCorrectionHelp");
+  if(help){
+    help.classList.toggle("hidden", !workers.some(w=>w.submitted));
+  }
+
   list.innerHTML = `
     <div class="attendance-sheet">
       <div class="attendance-grid-head">
@@ -3450,7 +3538,7 @@ function attendanceRowHtml(w,index){
       <div class="attendance-cell cell-action">
         ${locked
           ? `<button type="button" class="correction-btn"
-               onclick="openCorrectionModal(${index})">✎ Correction</button>`
+               onclick="openCorrectionModal(${index})">✎ CORRECTION REQUEST</button>`
           : `<span class="small muted">—</span>`}
       </div>
     </div>
@@ -4504,6 +4592,9 @@ function printCurrentStaff(){
         };
       <\/script>
     
+
+
+
 </body>
     </html>
   `);
